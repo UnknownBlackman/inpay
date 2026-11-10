@@ -67,3 +67,45 @@ export function TxLink({ url, label = 'tx' }: { url?: string | null; label?: str
   if (!url) return null;
   return <a className="tx" href={url} target="_blank" rel="noreferrer">{label} ↗</a>;
 }
+
+// ---- shared bits for the themed pages ----
+export const MERCHANT_EMOJI: Record<string, string> = { 'bengaluru-cafe': '☕', 'berlin-bikes': '🚲', 'nairobi-tailor': '🧵' };
+export const MERCHANT_IDS = ['bengaluru-cafe', 'berlin-bikes', 'nairobi-tailor'];
+
+/** Plain words for the invoice states, as the merchant would say them. */
+export const STATUS_LABEL: Record<string, string> = {
+  Open: 'Waiting', Underpaid: 'Part paid', Paid: 'Paid', Assigned: 'Paying out', Settled: 'In your bank', Refunded: 'Refunded',
+};
+
+export function StatusPill({ status }: { status: string }) {
+  return <span className={`pill s-${status}`}><i />{STATUS_LABEL[status] ?? status}</span>;
+}
+
+export function CoinIcon({ k }: { k: 'near' | 'eth' | 'usdc' }) {
+  return <span className={`coin c-${k}`} aria-hidden="true">{({ near: 'N', eth: 'E', usdc: 'U' })[k]}</span>;
+}
+
+export const DECIMALS = { near: 24, eth: 18, usdc: 6 } as const;
+
+/** Animates a number to its new value (stays put under reduced motion). */
+export function useCountUp(target: number, ms = 900): number {
+  const [v, setV] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || from.current === target) { setV(target); from.current = target; return; }
+    const start = performance.now(), a = from.current;
+    let raf = 0;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - start) / ms), e = 1 - Math.pow(1 - p, 3);
+      setV(a + (target - a) * e);
+      if (p < 1) raf = requestAnimationFrame(step); else from.current = target;
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
+
+export function Logo({ animated = false }: { animated?: boolean }) {
+  return <a className="logo" href="/" aria-label="INPay home"><img src={animated ? '/brand/logo.svg' : '/brand/logo-still.svg'} alt="INPay" /></a>;
+}

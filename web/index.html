@@ -1,12 +1,470 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>INPay</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INPay: crypto checkout that pays you in your own money</title>
+<meta name="description" content="Send a payment link priced in your own currency. Customers pay in NEAR, ETH or USDC; the cash lands in your bank and you never hold a coin. Live on NEAR testnet.">
+<meta property="og:title" content="INPay: crypto checkout that pays you in your own money">
+<meta property="og:description" content="They pay in crypto. You get paid in cash. Live on NEAR testnet.">
+<meta name="theme-color" content="#FFF7EE">
+<link rel="icon" href="/brand/logo-still.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0A0A; --ink-2:#1a1d22; --paper:#FFF7EE; --cream:#FBF3E6; --white:#fff;
+  --coral:#FF5A36; --coral-soft:#FFE3DA; --blue:#2b5cf5; --blue-soft:#E7EDFF;
+  --mint:#DDF5EA; --mint-ink:#0f8a5f; --butter:#FFF1C2; --sky:#E3F0FF;
+  --muted:#5d6472; --line:rgba(10,10,10,.1);
+  --display:"Encode Sans",system-ui,sans-serif; --text:"Inter",system-ui,sans-serif;
+  --hand:"Caveat",cursive; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --gut:80px;
+}
+*{box-sizing:border-box} html,body{margin:0} body{background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-.03em}
+p{margin:0}
+.wrap{width:min(100% - 2*var(--gut),1280px);margin:0 auto;position:relative}
+.btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 28px;border-radius:999px;font:600 16px/1 var(--text);text-decoration:none;white-space:nowrap;border:1.5px solid transparent}
+.btn--primary{background:var(--blue);color:#fff;box-shadow:0 10px 24px -10px rgba(43,92,245,.7)}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn--light{background:#fff;color:var(--ink)}
+.hand{font-family:var(--hand);font-weight:700}
+.mono{font-family:var(--mono)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 var(--text);letter-spacing:.01em;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line)}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--mint-ink);box-shadow:0 0 0 4px rgba(15,138,95,.15)}
+section{position:relative;overflow:hidden}
+
+/* nav */
+.nav{position:absolute;inset:0 0 auto;height:84px;z-index:20}
+.nav .wrap{height:100%;display:flex;align-items:center;gap:44px}
+.nav .logo img{height:44px;display:block}
+.nav__links{display:flex;gap:34px;font:500 15px/1 var(--text)} .nav__links a{color:var(--ink);text-decoration:none}
+.nav__right{margin-left:auto;display:flex;align-items:center;gap:22px} .nav__right a.plain{color:var(--ink);text-decoration:none;font:500 15px/1 var(--text)}
+.nav .btn{height:46px;padding:0 22px}
+
+/* ---------- 1 HERO: cream + dot grid, split, a live payment scene ---------- */
+.hero{min-height:940px;padding-bottom:40px;background:
+   radial-gradient(circle at 1px 1px, rgba(10,10,10,.09) 1px, transparent 1.4px) 0 0/26px 26px,
+   radial-gradient(60% 70% at 85% 30%, #ffe2d3 0, transparent 60%),
+   radial-gradient(50% 60% at 70% 95%, #dff1ff 0, transparent 60%),
+   var(--paper);}
+.hero .wrap{display:grid;grid-template-columns:6.4fr 5.6fr;gap:24px;padding-top:150px}
+.hero h1{font-size:clamp(52px,5.3vw,80px);line-height:1;font-weight:700;letter-spacing:-.045em;margin:26px 0 26px}
+.hero h1 .u{position:relative;white-space:nowrap}
+.hero h1 .u svg{position:absolute;left:-2%;bottom:-.12em;width:104%;height:.36em}
+.hero .lead{font-size:21px;line-height:1.5;color:#2b2f36;max-width:31ch}
+.hero .btns{display:flex;gap:12px;margin-top:36px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:44px;max-width:520px}
+.chips span{font:600 14px/1 var(--text);padding:9px 13px;border-radius:999px;background:#fff;border:1px solid var(--line)}
+.chips span.c{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips .lbl{background:none;border:0;padding:9px 4px 9px 0;color:var(--muted);font-weight:500}
+
+.fit{position:relative;width:100%}
+.fit>.stage{position:absolute;left:0;top:0;transform-origin:0 0}
+.scene{position:relative;width:620px;height:640px}
+.phone{position:absolute;left:10px;top:20px;width:300px;height:600px;border-radius:44px;background:var(--ink);padding:12px;box-shadow:0 40px 80px -30px rgba(10,10,10,.45);transform:rotate(-4deg)}
+.screen{width:100%;height:100%;border-radius:34px;background:#fff;overflow:hidden;padding:22px 18px;position:relative}
+.screen .notch{position:absolute;left:50%;top:10px;width:90px;height:24px;border-radius:20px;background:var(--ink);transform:translateX(-50%)}
+.screen .merchant{margin-top:30px;display:flex;align-items:center;gap:10px;font:600 14px/1.2 var(--text)}
+.screen .merchant b{width:34px;height:34px;border-radius:12px;background:var(--butter);display:grid;place-items:center;font-size:18px}
+.screen .merchant small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.screen .price{font:700 40px/1 var(--display);letter-spacing:-.03em;margin:18px 0 4px}
+.screen .sub{font-size:12px;color:var(--muted)}
+.coinrow{display:grid;grid-template-columns:30px 1fr auto;gap:0 10px;align-items:center;padding:11px 12px;border:1.5px solid var(--line);border-radius:16px;margin-top:8px;font-size:13px}
+.coinrow.on{border-color:var(--blue);background:var(--blue-soft)}
+.coinrow .ic{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 11px/1 var(--display)}
+.coinrow b{font:600 14px/1.2 var(--display)} .coinrow small{display:block;color:var(--muted);font-size:11px}
+.coinrow .amt{font:500 13px/1 var(--mono)}
+.paybtn{position:absolute;left:18px;right:18px;bottom:22px;height:50px;border-radius:999px;background:var(--blue);color:#fff;display:grid;place-items:center;font:600 15px/1 var(--text)}
+.paybtn .ok{position:absolute;inset:0;border-radius:inherit;background:var(--mint-ink);display:grid;place-items:center;animation:okflip 4s ease-in-out infinite}
+@keyframes okflip{0%,30%{opacity:0;transform:scale(.96)}38%,85%{opacity:1;transform:scale(1)}100%{opacity:0}}
+
+.route{position:absolute;inset:0;pointer-events:none}
+.route path{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:2 9;stroke-linecap:round;opacity:.45}
+.token{position:absolute;left:0;top:0;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 12px/1 var(--display);
+  offset-path:path("M300 300 C 420 300, 410 120, 520 150 S 610 360, 560 470");offset-rotate:0deg;box-shadow:0 8px 18px -6px rgba(0,0,0,.4);animation:travel 4s cubic-bezier(.5,0,.3,1) infinite}
+.token.t2{animation-delay:-1.33s} .token.t3{animation-delay:-2.66s}
+@keyframes travel{0%{offset-distance:0%;opacity:0;transform:scale(.6)}10%{opacity:1;transform:scale(1)}80%{opacity:1}100%{offset-distance:100%;opacity:0;transform:scale(.5)}}
+.escrow{position:absolute;left:452px;top:104px;width:150px;padding:10px 12px;border-radius:16px;background:#fff;border:1.5px solid var(--ink);font:600 13px/1.25 var(--text);box-shadow:4px 4px 0 var(--ink);transform:rotate(3deg)}
+.escrow small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.bank{position:absolute;right:0;bottom:40px;width:300px;padding:18px 20px;border-radius:24px;background:var(--ink);color:#fff;box-shadow:0 30px 60px -24px rgba(10,10,10,.6)}
+.bank .top{display:flex;justify-content:space-between;font-size:12px;color:#a8adb7}
+.bank .amt{font:700 38px/1 var(--display);margin:12px 0 6px;letter-spacing:-.02em}
+.bank .amt em{font-style:normal;color:#7ff0bf}
+.bank .row{display:flex;justify-content:space-between;font-size:12px;color:#a8adb7;border-top:1px solid rgba(255,255,255,.12);padding-top:10px;margin-top:10px}
+.bank{animation:pop 4s ease-in-out infinite}
+@keyframes pop{0%,70%{transform:translateY(0)}78%{transform:translateY(-8px)}86%,100%{transform:translateY(0)}}
+.note{position:absolute;font-family:var(--hand);font-weight:700;color:var(--coral);font-size:30px;line-height:1;transform:rotate(-6deg)}
+.note svg{position:absolute}
+
+/* ---------- 2 PAY WITH WHAT'S IN THE WALLET: dark ink, fanned coin cards ---------- */
+.dark{background:var(--ink);color:#fff;min-height:900px;padding-bottom:80px}
+.dark .wrap{padding-top:120px;display:grid;grid-template-columns:5fr 7fr;gap:48px}
+.dark h2{font-size:64px;line-height:1;font-weight:700}
+.dark h2 .hl{color:var(--coral)}
+.dark p.lead{color:#c2c6ce;font-size:19px;margin-top:24px;max-width:34ch}
+.dark .small{color:#8b919c;font-size:14px;margin-top:28px;max-width:40ch}
+.fan{position:relative;width:760px;height:620px}
+.cc{position:absolute;width:250px;height:380px;border-radius:28px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 40px 70px -30px rgba(0,0,0,.8)}
+.cc .h{display:flex;justify-content:space-between;align-items:center}
+.cc .ic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font:700 18px/1 var(--display);background:rgba(255,255,255,.18)}
+.cc .name{font:700 34px/1 var(--display);letter-spacing:-.03em}
+.cc .amt{font:500 26px/1.1 var(--mono);letter-spacing:-.02em}
+.cc .via{font-size:13px;opacity:.75;margin-top:8px}
+.cc .tag{font:600 12px/1 var(--text);padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.2)}
+.cc1{left:0;top:110px;background:#1f2a44;color:#fff;transform:rotate(-10deg)}
+.cc2{left:238px;top:60px;background:linear-gradient(160deg,#3d55d9,#2b5cf5);color:#fff;transform:rotate(-1deg);z-index:2}
+.cc3{left:476px;top:120px;background:#f4f1ea;color:var(--ink);transform:rotate(9deg)}
+.cc3 .ic{background:#2775ca;color:#fff} .cc3 .tag{background:rgba(10,10,10,.08)}
+.fan .same{position:absolute;left:180px;bottom:0;font-family:var(--hand);font-weight:700;font-size:34px;color:var(--coral);transform:rotate(-3deg)}
+
+/* ---------- 3 MERCHANT VIEW: light sky, app window ---------- */
+.mv{min-height:900px;padding-bottom:100px;background:linear-gradient(180deg,#fff, #f2f6fc)}
+.mv .wrap{padding-top:120px}
+.mv .head{display:grid;grid-template-columns:6fr 6fr;gap:48px;align-items:end}
+.mv h2{font-size:56px;line-height:1.02;font-weight:700}
+.mv .head p{font-size:19px;color:var(--muted);max-width:44ch}
+.app{margin-top:48px;height:560px;display:grid;grid-template-columns:4.6fr 7.4fr;background:#fff;border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:0 50px 90px -50px rgba(20,30,60,.45)}
+.list{background:#fafbfd;border-right:1px solid var(--line)}
+.lbar{height:56px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--line);font:600 15px/1 var(--display)}
+.lbar .seg{margin-left:auto;display:flex;gap:4px;background:#eef1f6;border-radius:999px;padding:4px;font:500 12px/1 var(--text)}
+.lbar .seg span{padding:7px 11px;border-radius:999px;color:var(--muted)} .lbar .seg .on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.row{display:grid;grid-template-columns:40px 1fr auto;gap:2px 12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);font-size:14px}
+.row .av{grid-row:span 2;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font:700 12px/1 var(--display);color:#fff}
+.row b{font-weight:600} .row small{color:var(--muted);font-size:12px}
+.row.on{background:#fff;box-shadow:inset 4px 0 0 var(--blue)}
+.st{grid-row:span 2;font:600 12px/1 var(--text);padding:7px 10px;border-radius:999px}
+.st.s{background:var(--mint);color:var(--mint-ink)} .st.a{background:var(--blue-soft);color:var(--blue)} .st.p{background:var(--butter);color:#8a6200} .st.r{background:var(--coral-soft);color:#c23a1a}
+.open{padding:26px 30px;display:grid;gap:20px;align-content:start}
+.ohead{display:flex;justify-content:space-between;align-items:flex-start}
+.ohead .k{font-size:13px;color:var(--muted)} .ohead .v{font:700 44px/1 var(--display);letter-spacing:-.03em;margin-top:6px}
+.qs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.q{border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;font-size:13px;color:var(--muted)}
+.q b{display:block;color:var(--ink);font:600 15px/1.2 var(--display)}
+.q .n{display:block;color:var(--ink);font:500 17px/1.3 var(--mono);margin:8px 0 2px}
+.q.w{border-color:var(--blue);background:var(--blue-soft)} .q.w .badge{float:right;background:var(--blue);color:#fff;font:600 11px/1 var(--text);padding:5px 8px;border-radius:999px}
+.ev{display:grid;grid-template-columns:76px 100px 1fr;gap:12px;font-size:13px;padding:10px 0;border-top:1px solid var(--line)}
+.ev time{font-family:var(--mono);color:var(--muted);font-size:12px} .ev .k{font-weight:600}
+.k.b{color:var(--blue)} .k.g{color:var(--mint-ink)} .k.m{color:var(--muted)}
+
+/* ---------- 4 ESCROW FLOW (kept, polished): mint paper ---------- */
+.flow{min-height:900px;padding-bottom:100px;background:#EEF7F1}
+.flow .wrap{padding-top:120px}
+.flow .head{display:grid;grid-template-columns:6fr 6fr;gap:48px;align-items:end}
+.flow h2{font-size:56px;line-height:1.02;font-weight:700}
+.flow .head p{font-size:19px;color:#3c4a43;max-width:46ch}
+.dgm-fit{margin-top:56px}
+.dgm{width:1280px;height:520px;border-radius:32px;background:#fff;position:relative;overflow:hidden;border:1px solid rgba(15,138,95,.15)}
+.dgm svg{position:absolute;inset:0}
+.node{position:absolute;background:#fff;border:1.5px solid var(--ink);border-radius:18px;padding:14px 18px;font-size:13px;box-shadow:4px 4px 0 var(--ink)}
+.node b{display:block;font:700 17px/1.2 var(--display);margin-bottom:2px} .node small{color:var(--muted)}
+.node.core{background:var(--ink);color:#fff;box-shadow:4px 4px 0 var(--coral)} .node.core small{color:#a9aeb7}
+.node.bank2{background:var(--mint);border-color:var(--mint-ink);box-shadow:4px 4px 0 var(--mint-ink)}
+.node.fail{opacity:.55;border-style:dashed;box-shadow:none}
+.pulse{fill:none;stroke:var(--coral);stroke-width:4;stroke-linecap:round;stroke-dasharray:60 1400;animation:run 3.2s linear infinite}
+@keyframes run{from{stroke-dashoffset:0}to{stroke-dashoffset:-1460}}
+.rule{position:absolute;left:44px;bottom:34px;font-family:var(--hand);font-size:28px;font-weight:700;color:var(--coral)}
+
+/* ---------- 5 STATEMENT: coral band, the logo's loop drawn round 'cash' ---------- */
+.coral{background:var(--coral);color:#fff;min-height:900px;padding-bottom:100px}
+.coral .wrap{padding-top:150px}
+.coral .big{font:700 136px/.95 var(--display);letter-spacing:-.05em;max-width:12ch}
+.coral .big .soft{color:var(--ink)}
+.coral .big .ring{position:relative;display:inline-block}
+.coral .big .ring svg{position:absolute;left:-8%;top:-14%;width:116%;height:128%;overflow:visible}
+.coral .foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:70px}
+.coral .foot p{font-size:21px;max-width:38ch;color:#fff}
+.coral .stamp{font-family:var(--hand);font-size:34px;font-weight:700;color:var(--ink);transform:rotate(-4deg)}
+
+/* ---------- 6 FEATURES: bento of coloured tiles ---------- */
+.feat{background:var(--paper);padding:120px 0 100px}
+.feat h2{font-size:56px;line-height:1.02;font-weight:700;max-width:16ch}
+.bento{margin-top:56px;display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:330px;gap:20px}
+.tile{border-radius:32px;padding:30px;position:relative;overflow:hidden}
+.tile h3{font-size:30px;line-height:1.08;font-weight:700;max-width:15ch}
+.tile p{margin-top:12px;font-size:16px;max-width:36ch;color:#2b2f36}
+.t1{grid-column:span 7;background:var(--butter)} .t2{grid-column:span 5;background:var(--ink);color:#fff} .t2 p{color:#c2c6ce}
+.t3{grid-column:span 5;background:var(--sky)} .t4{grid-column:span 7;background:var(--mint)}
+.mini{position:absolute;right:28px;bottom:28px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 20px 40px -24px rgba(0,0,0,.35);font-size:13px;width:300px;color:var(--ink)}
+.mini .r{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)} .mini .r:first-child{border-top:0}
+.timer{position:absolute;right:30px;bottom:30px;width:150px;height:150px}
+.timer circle{fill:none;stroke-width:10}
+.tl{position:absolute;left:30px;right:30px;bottom:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tl div{background:#fff;border-radius:18px;padding:12px 14px;font-size:13px} .tl b{display:block;font:600 14px/1.3 var(--display)}
+.tl .x{opacity:.55;text-decoration:line-through}
+
+/* ---------- 7 PROOF: a receipt on dark paper ---------- */
+.proof{background:#14161a;color:#fff;padding-bottom:120px}
+.proof .wrap{padding-top:120px;display:grid;grid-template-columns:5fr 7fr;gap:64px}
+.proof h2{font-size:56px;line-height:1.02;font-weight:700}
+.proof .lead{color:#c2c6ce;font-size:19px;margin-top:22px;max-width:36ch}
+.stamps{display:flex;flex-wrap:wrap;gap:10px;margin-top:36px}
+.stamps span{font:600 13px/1 var(--text);padding:10px 14px;border-radius:999px;border:1.5px dashed rgba(255,255,255,.35)}
+.stamps .real{border-style:solid;border-color:#7ff0bf;color:#7ff0bf} .stamps .sim{border-color:#ffb199;color:#ffb199}
+.receipt{background:#fbf8f2;color:var(--ink);border-radius:6px;padding:30px 32px 40px;font:400 14px/1.5 var(--mono);transform:rotate(1.5deg);box-shadow:0 40px 80px -30px rgba(0,0,0,.8);position:relative;
+  -webkit-mask:radial-gradient(circle 9px at 50% 100%,transparent 98%,#000) 0 100%/24px 100% repeat-x;mask:radial-gradient(circle 9px at 50% 100%,transparent 98%,#000) bottom/24px 18px repeat-x, linear-gradient(#000,#000) top/100% calc(100% - 17px) no-repeat}
+.receipt .t{text-align:center;font:700 18px/1.3 var(--display);letter-spacing:-.01em}
+.receipt .c{text-align:center;color:#6b6f77;font-size:12px;margin-bottom:18px}
+.receipt .l{display:flex;justify-content:space-between;padding:9px 0;border-top:1px dashed #cfcabf}
+.receipt .l span:last-child,.receipt .l a{color:var(--blue);text-decoration:none}
+.receipt .tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:10px;padding-top:12px;font-weight:500}
+
+/* ---------- 8 FAQ ---------- */
+.faq{background:var(--paper);min-height:900px;padding-bottom:100px}
+.faq .wrap{padding-top:120px;display:grid;grid-template-columns:5fr 7fr;gap:64px}
+.faq h2{font-size:56px;font-weight:700;line-height:1.02}
+.faq .note2{font-family:var(--hand);font-size:30px;color:var(--coral);font-weight:700;margin-top:24px;transform:rotate(-3deg);display:inline-block}
+.qa{border-top:1.5px solid var(--ink)} .qa div{padding:24px 0;border-bottom:1px solid var(--line)}
+.qa h3{font-size:22px;font-weight:600;letter-spacing:-.02em} .qa p{margin-top:8px;color:#2b2f36;max-width:56ch}
+
+/* ---------- 9 CLOSE: blue band with the logo drawing itself ---------- */
+.close{background:var(--blue);color:#fff;padding:120px 0 40px}
+.close .top{display:flex;justify-content:space-between;align-items:flex-end}
+.close h2{font-size:72px;line-height:1;font-weight:700;max-width:14ch}
+.close .biglogo{margin:70px 0 60px;background:#fff;border-radius:40px;padding:50px 0;display:grid;place-items:center}
+.close .biglogo img{width:min(620px,78%);height:auto}
+.fcols{display:grid;grid-template-columns:4fr repeat(4,2fr);gap:24px;font-size:14px;color:#dce4ff}
+.fcols h4{font:600 15px/1 var(--display);color:#fff;margin-bottom:14px;letter-spacing:-.01em} .fcols a{display:block;color:#dce4ff;text-decoration:none;margin-bottom:9px}
+.legal{display:flex;justify-content:space-between;margin-top:46px;padding-top:22px;border-top:1px solid rgba(255,255,255,.25);font-size:13px;color:#c9d5ff}
+
+/* phone */
+@media (max-width:639px){
+  :root{--gut:22px}
+  .nav{height:64px} .nav .logo img{height:34px} .nav__links,.nav__right{display:none}
+  .burger{margin-left:auto;width:44px;height:44px;border-radius:999px;border:1.5px solid var(--ink);display:grid;place-items:center}
+  .hero{height:auto;padding-bottom:40px} .hero .wrap{grid-template-columns:1fr;padding-top:100px;gap:10px}
+  .hero h1{font-size:50px} .hero .lead{font-size:18px} .hero .btns{flex-direction:column} .btn{justify-content:center}
+  .chips{margin-top:28px}
+  body{overflow-x:hidden}
+  .dark,.mv,.flow,.coral,.proof,.faq{height:auto;padding-bottom:70px}
+  .dark .wrap,.mv .head,.flow .head,.proof .wrap,.faq .wrap{grid-template-columns:1fr;padding-top:80px}
+  .dark h2,.mv h2,.flow h2,.feat h2,.proof h2,.faq h2{font-size:38px}
+  .fan-fit{margin-top:20px}
+  .coral .big{font-size:58px} .coral .foot{display:block} .coral .stamp{margin-top:20px}
+  .bento{grid-template-columns:1fr;grid-auto-rows:auto} .tile{grid-column:auto!important;min-height:300px}
+}
+@media (max-width:1023px){
+  .bento{grid-template-columns:1fr 1fr;grid-auto-rows:auto} .tile{grid-column:auto!important;min-height:0;display:flex;flex-direction:column}
+  .tile .mini,.tile .timer,.tile .tl{position:static;margin-top:24px}
+  .tile .mini{width:auto;max-width:340px} .tile .timer{align-self:flex-end;width:120px;height:120px}
+}
+@media (max-width:639px){
+  .bento{grid-template-columns:1fr}
+  .tl{grid-template-columns:1fr 1fr 1fr;gap:8px} .tl div{padding:10px;font-size:12px;border-radius:14px}
+  .app{height:auto;grid-template-columns:1fr} .app .open{display:none} .list{border-right:0}
+  .lbar{height:auto;flex-wrap:wrap;gap:8px;padding:14px 16px} .lbar .seg{margin-left:0}
+  .row{padding:12px 16px}
+  .close .biglogo{margin:40px 0 36px;padding:28px 0;border-radius:28px}
+  .close{padding-top:80px} .close h2{font-size:40px} .close .top{display:block} .close .top .btn{margin-top:20px}
+  .fcols{grid-template-columns:1fr 1fr} .fcols > div:first-child{grid-column:1 / -1}
+  .legal{display:block} .legal span{display:block;margin-top:6px}
+}
+@media (min-width:640px){.burger,.sheet{display:none!important}}
+@media (prefers-reduced-motion: reduce){ .token,.bank,.paybtn .ok,.pulse{animation:none!important} .token{display:none} .paybtn .ok{opacity:1} }
+.burger{color:var(--ink);background:#fff;font-size:18px;cursor:pointer}
+.sheet{position:absolute;inset:64px 0 auto 0;z-index:30;background:var(--paper);border-bottom:1.5px solid var(--ink);padding:8px 22px 24px;box-shadow:0 30px 40px -30px rgba(0,0,0,.35);display:none}
+.sheet.open{display:block;animation:drop .2s ease-out}
+@keyframes drop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.sheet a{display:flex;align-items:center;justify-content:space-between;height:56px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;font:600 18px/1 var(--display);letter-spacing:-.02em}
+.sheet a::after{content:"→";color:var(--muted);font-weight:500}
+.sheet .btn{margin-top:18px;width:100%;height:52px;justify-content:center;border-bottom:0;font:600 16px/1 var(--text);color:#fff}
+.sheet .btn::after{content:none}
+</style>
+</head>
+<body>
+<header class="nav"><div class="wrap">
+  <a class="logo" href="/" aria-label="INPay home"><img src="/brand/logo.svg" alt="INPay"></a>
+  <nav class="nav__links" aria-label="Main"><a href="#coins">How it works</a><a href="#escrow">Escrow</a><a href="#proof">Proof</a><a href="#questions">Questions</a></nav>
+  <div class="nav__right"><a class="plain" href="/dashboard">Merchant dashboard</a><a class="btn btn--primary" href="/try">Try a checkout</a></div>
+  <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet">☰</button>
+</div></header>
+<nav class="sheet" id="sheet" aria-label="Menu">
+  <a href="#coins">How it works</a><a href="#escrow">Escrow</a><a href="#proof">Proof</a><a href="#questions">Questions</a>
+  <a href="/dashboard">Merchant dashboard</a><a class="btn btn--primary" href="/try">Try a checkout →</a>
+</nav>
+
+<main>
+<!-- 1 HERO -->
+<section class="hero" aria-labelledby="hero-h"><div class="wrap">
+  <div>
+    <span class="eyebrow"><i></i>Live on NEAR testnet</span>
+    <h1 id="hero-h">Receiving payment should be <span class="u">easy.<svg viewBox="0 0 300 40" preserveAspectRatio="none"><path d="M4 28 C 70 8, 160 6, 296 22" fill="none" stroke="#FF5A36" stroke-width="9" stroke-linecap="round"/></svg></span></h1>
+    <p class="lead">Send your customer a link with the price in your own money. They pay with the crypto they already have, and cash lands in your bank. You never touch a coin.</p>
+    <div class="btns"><a class="btn btn--primary" href="/try">Try a checkout →</a><a class="btn btn--ghost" href="#escrow">See how it works</a></div>
+    <div class="chips"><span class="lbl">Price it in</span><span class="c">₹ INR</span><span class="c">€ EUR</span><span class="c">KSh KES</span><span>your local currency</span></div>
+  </div>
+  <div class="fit" data-w="620" data-h="640"><div class="scene stage" role="img" aria-label="A customer pays 1.2486 NEAR for a ₹420 order; the coin waits in escrow and the cafe's bank receives ₹420.00">
+    <svg class="route" viewBox="0 0 620 640"><path d="M300 300 C 420 300, 410 120, 520 150 S 610 360, 560 470"/></svg>
+    <div class="phone"><div class="screen"><span class="notch"></span>
+      <div class="merchant"><b>☕</b><span>Bengaluru Cafe<small>Masala dosa, filter coffee x2</small></span></div>
+      <div class="price">₹420.00</div><div class="sub">Pick how you want to pay</div>
+      <div class="coinrow on"><span class="ic" style="background:#0A0A0A">N</span><span><b>NEAR</b><small>incl. 0.8% fee</small></span><span class="amt">1.2486</span></div>
+      <div class="coinrow"><span class="ic" style="background:#627eea">E</span><span><b>ETH</b><small>incl. 1.5% fee</small></span><span class="amt">0.00216</span></div>
+      <div class="coinrow"><span class="ic" style="background:#2775ca">U</span><span><b>USDC</b><small>incl. 0.8% fee</small></span><span class="amt">4.5089</span></div>
+      <div class="paybtn">Pay 1.2486 NEAR<span class="ok">✓ Paid</span></div>
+    </div></div>
+    <span class="token" style="background:#0A0A0A">N</span><span class="token t2" style="background:#627eea">E</span><span class="token t3" style="background:#2775ca">U</span>
+    <div class="escrow">Held in escrow<small>on NEAR, until the bank says yes</small></div>
+    <div class="bank"><div class="top"><span>Cafe's bank account</span><span>just now</span></div>
+      <div class="amt"><em>+</em>₹420.00</div><div style="font-size:13px;color:#c9ced8">from swiftcash · full price, no crypto</div>
+      <div class="row"><span>Balance</span><span>₹1,676.64</span></div></div>
+    <div class="note" style="left:345px;top:300px">you never hold<br>the coin
+      <svg width="70" height="50" viewBox="0 0 70 50" style="left:150px;top:40px"><path d="M6 6 C 40 10, 60 30, 62 46 M52 38 L62 47 L68 36" fill="none" stroke="#FF5A36" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </div></div>
+</div></section>
+
+<!-- 2 PAY WITH WHAT'S IN THE WALLET -->
+<section class="dark" id="coins"><div class="wrap">
+  <div>
+    <h2>Your customer pays with <span class="hl">what's already in their wallet.</span></h2>
+    <p class="lead">Not just stablecoins. NEAR, ETH or USDC all work, and each one shows the exact amount before anyone taps Pay. No guessing, no "send roughly this much".</p>
+    <p class="small">The price is locked for 10 minutes. Send too much and the extra goes straight back. Send too little and they're told exactly what's missing.</p>
+  </div>
+  <div class="fit fan-fit" data-w="760" data-h="620"><div class="fan stage">
+    <div class="cc cc1"><div class="h"><span class="ic">N</span><span class="tag">via swiftcash</span></div><div><div class="name">NEAR</div><div class="amt">1.248618</div><div class="via">incl. 0.8% conversion fee</div></div></div>
+    <div class="cc cc2"><div class="h"><span class="ic">E</span><span class="tag">via payrail</span></div><div><div class="name">ETH</div><div class="amt">0.002161</div><div class="via">incl. 1.5% conversion fee</div></div></div>
+    <div class="cc cc3"><div class="h"><span class="ic">U</span><span class="tag">via swiftcash</span></div><div><div class="name">USDC</div><div class="amt">4.508932</div><div class="via">incl. 0.8% conversion fee</div></div></div>
+    <span class="same">three coins, one price: ₹420 to the cafe</span>
+  </div></div>
+</div></section>
+
+<!-- 3 MERCHANT VIEW -->
+<section class="mv" id="merchant"><div class="wrap">
+  <div class="head"><h2>Everything the merchant needs, on one screen</h2>
+  <p>Who paid, in what coin, which payout provider gave the best deal, and when the money hit the bank. The agent does the chasing; you just watch the balance go up.</p></div>
+  <div class="app">
+    <div class="list">
+      <div class="lbar">Payments<span class="seg"><span class="on">Bengaluru Cafe</span><span>Berlin Bikes</span><span>Nairobi Tailor</span></span></div>
+      <div class="row on"><span class="av" style="background:#0A0A0A">N</span><b>₹420.00 · 1.2486 NEAR</b><span class="st s">In your bank</span><small>swiftcash · 10:42</small></div>
+      <div class="row"><span class="av" style="background:#0A0A0A">N</span><b>₹420.00 · 2.0161 NEAR</b><span class="st a">Paying out</span><small>swiftcash · 10:32</small></div>
+      <div class="row"><span class="av" style="background:#2775ca">U</span><b>₹330.00 · 3.5401 USDC</b><span class="st p">Paid</span><small>picking a provider</small></div>
+      <div class="row"><span class="av" style="background:#627eea">E</span><b>₹650.00 · 0.0033 ETH</b><span class="st s">In your bank</span><small>payrail · yesterday</small></div>
+      <div class="row"><span class="av" style="background:#0A0A0A">N</span><b>₹420.00 · 1.2337 NEAR</b><span class="st s">In your bank</span><small>swiftcash · Mon</small></div>
+      <div class="row"><span class="av" style="background:#2775ca">U</span><b>₹160.00 · 0.5 USDC</b><span class="st r">Refunded</span><small>not enough sent in time</small></div>
+    </div>
+    <div class="open">
+      <div class="ohead"><div><div class="k">Cafe's bank balance</div><div class="v">₹1,676.64</div></div><span class="st s" style="height:30px">✓ Settled in 5.4 s</span></div>
+      <div><div class="k" style="font-size:13px;color:var(--muted);margin-bottom:10px">Who could pay out ₹420.00, and how much NEAR they needed</div>
+        <div class="qs">
+          <div class="q w"><span class="badge">best</span><b>swiftcash</b><span class="n">1.248618</span>0.8% · ready in 5 s</div>
+          <div class="q"><b>payrail</b><span class="n">1.257492</span>1.5% · ready in 3 s</div>
+          <div class="q"><b>quickfx</b><span class="n">1.270389</span>2.5% · ready in 2 s</div>
+        </div></div>
+      <div>
+        <div class="ev"><time>10:42:24</time><span class="k b">Quote locked</span><span>swiftcash, before the customer paid. They saved 1.7% versus the worst offer.</span></div>
+        <div class="ev"><time>10:42:29</time><span class="k m">Paid</span><span>1.248618 NEAR arrived in escrow ↗</span></div>
+        <div class="ev"><time>10:42:37</time><span class="k g">Bank credit</span><span>₹420.00 from swiftcash. Matches the quote.</span></div>
+        <div class="ev"><time>10:42:41</time><span class="k g">Released</span><span>Escrow paid swiftcash. Done ↗</span></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 4 ESCROW FLOW (kept) -->
+<section class="flow" id="escrow"><div class="wrap">
+  <div class="head"><h2>How the money moves through escrow</h2>
+  <p>The coin waits in a contract on NEAR. A payout provider only gets it after your bank confirms the cash arrived. If a provider goes quiet, the agent hands the job to the next one.</p></div>
+  <div class="fit dgm-fit" data-w="1280" data-h="520"><div class="dgm stage">
+    <svg viewBox="0 0 1280 520" preserveAspectRatio="none">
+      <g fill="none" stroke="#0A0A0A" stroke-width="1.6" stroke-dasharray="3 7" opacity=".5">
+        <path d="M262 260 H480"/><path d="M720 260 C790 260 790 120 860 120"/><path d="M720 260 H860"/><path d="M720 260 C790 260 790 400 860 400"/>
+        <path d="M1080 120 C1130 120 1120 260 1150 260"/><path d="M1080 400 C1130 400 1120 260 1150 260"/>
+      </g>
+      <path class="pulse" d="M262 260 H480 M720 260 C790 260 790 120 860 120 M1080 120 C1130 120 1120 260 1150 260"/>
+    </svg>
+    <div class="node" style="left:44px;top:222px;width:218px"><b>Customer</b><small>pays 1.248618 NEAR</small></div>
+    <div class="node core" style="left:480px;top:210px;width:240px"><b>INPay escrow</b><small>a contract on NEAR holds the coin</small></div>
+    <div class="node" style="left:860px;top:82px;width:220px"><b>swiftcash ✓</b><small>pays ₹420.00 first</small></div>
+    <div class="node fail" style="left:860px;top:222px;width:220px"><b>payrail</b><small>standing by</small></div>
+    <div class="node fail" style="left:860px;top:362px;width:220px"><b>quickfx</b><small>standing by</small></div>
+    <div class="node bank2" style="left:1150px;top:222px;width:110px"><b>Bank</b><small>₹420.00</small></div>
+    <span class="rule">cash first, crypto second. Always.</span>
+  </div></div>
+</div></section>
+
+<!-- 5 STATEMENT -->
+<section class="coral"><div class="wrap">
+  <p class="big">They pay in crypto. <span class="soft">You get paid in <span class="ring">cash.<svg viewBox="0 0 200 100" preserveAspectRatio="none"><ellipse cx="100" cy="52" rx="96" ry="44" fill="none" stroke="#0A0A0A" stroke-width="5" transform="rotate(-4 100 52)"/><circle cx="168" cy="12" r="7" fill="#fff"/></svg></span></span></p>
+  <div class="foot"><p>Rupees, euros, shillings, whatever your bank speaks. INPay turns the coin into it before it reaches you.</p><span class="stamp">no crypto on your books ✓</span></div>
+</div></section>
+
+<!-- 6 FEATURES -->
+<section class="feat" id="features"><div class="wrap">
+  <h2>The boring parts, handled for you</h2>
+  <div class="bento">
+    <article class="tile t1"><h3>The price is locked before they pay</h3><p>Providers quote first, the cheapest wins, and that's the number on the checkout. It holds for 10 minutes.</p>
+      <svg class="timer" viewBox="0 0 150 150"><circle cx="75" cy="75" r="60" stroke="rgba(10,10,10,.12)"/><circle cx="75" cy="75" r="60" stroke="#0A0A0A" stroke-dasharray="377" stroke-dashoffset="90" stroke-linecap="round" transform="rotate(-90 75 75)"/><text x="75" y="84" text-anchor="middle" font-family="Encode Sans" font-weight="700" font-size="30">9:42</text></svg></article>
+    <article class="tile t2"><h3>Cash first, crypto second</h3><p>The provider pays your bank before it gets the coin. The escrow won't let it go any other way.</p>
+      <div class="mini"><div class="r"><span>Bank credit</span><b style="color:var(--mint-ink)">+₹420.00</b></div><div class="r"><span>Then: escrow released</span><b>1.2486 NEAR</b></div></div></article>
+    <article class="tile t3"><h3>Sent too little? They'll know exactly how much</h3><p>"You're 1.0158 USDC short." Top up within the 10 minutes, or it all comes back automatically.</p></article>
+    <article class="tile t4"><h3>A provider stalls? Someone else pays</h3><p>No bank credit in 60 seconds and the agent moves the job on-chain to the next best provider.</p>
+      <div class="tl"><div class="x"><b>payrail</b>no payout in 15 s</div><div><b>quickfx</b>reassigned on-chain</div><div><b>€4.45</b>in Berlin Bikes' bank</div></div></article>
+  </div>
+</div></section>
+
+<!-- 7 PROOF -->
+<section class="proof" id="proof"><div class="wrap">
+  <div>
+    <h2>Real transactions, on NEAR testnet</h2>
+    <p class="lead">Every escrow payment, payout and refund here is a real transaction you can open in the explorer. The payout providers and the banks are pretend, for now.</p>
+    <div class="stamps"><span class="real">Escrow contract: real</span><span class="real">Live prices: real</span><span>wETH, USDC: testnet stand-ins</span><span class="sim">Providers and banks: simulated</span></div>
+  </div>
+  <div class="receipt">
+    <div class="t"><a href="https://testnet.nearblocks.io/address/inpay.0xforge.testnet" target="_blank" rel="noreferrer" style="color:inherit;text-decoration:none">inpay.0xforge.testnet ↗</a></div><div class="c">Bengaluru Cafe · invoice #13 · 10 Nov 2026</div>
+    <div class="l"><span>pay_near · 1.248618 NEAR</span><a href="https://testnet.nearblocks.io/txns/E9bSHqrPftuqf5Q94krhb4kRzyfA5sN4Y2vAUmQZmDHX" target="_blank" rel="noreferrer">E9bSHqrP… ↗</a></div>
+    <div class="l"><span>assign_provider · swiftcash</span><a href="https://testnet.nearblocks.io/txns/9C7u3vLs1ACJPqp5SyWvDfFxsZeWcSecqZji2ESr6nMa" target="_blank" rel="noreferrer">9C7u3vLs… ↗</a></div>
+    <div class="l"><span>bank credit · ₹420.00</span><span>BNK-7F3A9C21</span></div>
+    <div class="l"><span>confirm_payout · released</span><a href="https://testnet.nearblocks.io/txns/A5e9CNeA9oktJHWVFC3nsCVW3DBSc4uLHk3XqNemgCHw" target="_blank" rel="noreferrer">A5e9CNeA… ↗</a></div>
+    <div class="l"><span>reassign_provider · quickfx</span><a href="https://testnet.nearblocks.io/txns/9gYv9b8JMC9rR8VwGcFF84Ns33jhCBmgcPu8wWpTv8kr" target="_blank" rel="noreferrer">9gYv9b8J… ↗</a></div>
+    <div class="l"><span>refund · 0.5 USDC</span><a href="https://testnet.nearblocks.io/txns/3ud7LgGKSk9JSer2uaKy3RvQz3k3dRGUXZ4oaoN3ALFg" target="_blank" rel="noreferrer">3ud7LgGK… ↗</a></div>
+    <div class="tot"><span>Merchant received</span><span>₹420.00 in full</span></div>
+  </div>
+</div></section>
+
+<!-- 8 FAQ -->
+<section class="faq" id="questions"><div class="wrap">
+  <div><h2>Questions merchants ask us</h2><span class="note2">short answers, promise</span></div>
+  <div class="qa">
+    <div><h3>Do I ever hold crypto?</h3><p>No. The coin sits in the escrow contract and goes to the payout provider. You only ever see money in your own currency.</p></div>
+    <div><h3>What does it cost my customer?</h3><p>The provider's conversion fee, between 0.8% and 2.5%, shown on the checkout before they pay.</p></div>
+    <div><h3>What if they send the wrong amount?</h3><p>Extra comes straight back. Too little, and they see exactly what's missing; if they don't top up in 10 minutes, everything is refunded.</p></div>
+    <div><h3>Can I use it with real money today?</h3><p>Not yet. It runs on NEAR testnet, with simulated payout providers and banks.</p></div>
+  </div>
+</div></section>
+</main>
+
+<!-- 9 CLOSE + FOOTER -->
+<footer class="close"><div class="wrap">
+  <div class="top"><h2>Take your first crypto payment today</h2><a class="btn btn--light" href="/try">Try a checkout →</a></div>
+  <div class="biglogo"><img id="closelogo" src="/brand/logo-still.svg" alt="INPay"></div>
+  <div class="fcols">
+    <div><p style="font:600 20px/1.3 var(--display);color:#fff;max-width:20ch">Crypto in, your own money out.</p></div>
+    <div><h4>How it works</h4><a href="/try">Checkout</a><a href="/dashboard">Merchant view</a><a href="#features">Failover</a></div>
+    <div><h4>Escrow</h4><a href="#escrow">Release rule</a><a href="#questions">Refunds</a></div>
+    <div><h4>Proof</h4><a href="#proof">Testnet transactions</a><a href="#proof">Real vs simulated</a></div>
+    <div><h4>Questions</h4><a href="#questions">Fees</a><a href="#questions">Is it live?</a></div>
+  </div>
+  <div class="legal"><span>© 2026 INPay. <span> All rights reserved! </span></div>
+</div></footer>
+<script>
+  // phone menu: opens and closes the sheet; any link in it closes it
+  const burger = document.querySelector('.burger'), sheet = document.getElementById('sheet');
+  const setMenu = (open) => { sheet.classList.toggle('open', open); burger.setAttribute('aria-expanded', String(open)); burger.textContent = open ? '✕' : '☰'; };
+  burger.addEventListener('click', () => setMenu(!sheet.classList.contains('open')));
+  sheet.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+  // fixed-size compositions (hero scene, coin fan, escrow diagram) scale as a whole to their column
+  const fitAll = () => document.querySelectorAll('.fit').forEach((f) => {
+    const w = +f.dataset.w, h = +f.dataset.h, k = Math.min(1, f.clientWidth / w);
+    f.firstElementChild.style.transform = `scale(${k})`;
+    f.style.height = h * k + 'px';
+  });
+  addEventListener('resize', fitAll); fitAll(); document.fonts && document.fonts.ready.then(fitAll);
+  const logo = document.getElementById('closelogo');
+  if (logo && 'IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { logo.src = '/brand/logo.svg?play=' + Date.now(); o.disconnect(); } }, { threshold: .5 }).observe(logo);
+  }
+</script>
+</body>
 </html>

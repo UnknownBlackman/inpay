@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api, fmtAssetAmount, SYMBOL, TxLink, useConfig, usePoll } from './api';
+import { api, CoinIcon, CUR_SYMBOL, DECIMALS, fmtUnits, Logo, MERCHANT_EMOJI, SYMBOL, useConfig, usePoll } from './api';
 
-const STEPS = ['Open', 'Paid', 'Assigned', 'Settled'];
-const EXPLAIN: Record<string, string> = {
-  Open: 'Invoice created on-chain. Waiting for your payment.',
-  Underpaid: 'Partly paid. Send the rest before the deadline or it is refunded.',
-  Paid: 'Payment received and held in escrow. The merchant’s agent is collecting offramp quotes.',
-  Assigned: 'An offramp provider is paying the merchant in local currency.',
-  Settled: 'Done. The merchant has been paid in cash; the crypto was released to the provider.',
-  Refunded: 'The invoice expired and your payment was refunded.',
+const money = (minor: string | number | bigint, cur: string) => {
+  const v = BigInt(minor);
+  return `${CUR_SYMBOL[cur] ?? ''}${(v / 100n).toLocaleString('en-US')}.${(v % 100n).toString().padStart(2, '0')}`;
 };
+const coin = (amount: string, k: 'near' | 'eth' | 'usdc', frac = 6) => fmtUnits(amount, DECIMALS[k], frac);
+const PAID = ['Paid', 'Assigned', 'Settled'];
 
 export function Checkout() {
   const { id } = useParams();
@@ -22,99 +19,115 @@ export function Checkout() {
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
-  if (loadErr && !data) return <div className="card error">{loadErr}</div>;
-  if (!data) return <div className="card">Loading…</div>;
+  if (loadErr && !data) return <Frame><p className="error" style={{ maxWidth: 520, margin: '40px auto' }}>This payment link doesn't exist or the server can't be reached. ({loadErr})</p></Frame>;
+  if (!data) return <Frame><p className="muted" style={{ textAlign: 'center', padding: 80 }}>Loading the checkout…</p></Frame>;
 
+  const cur = data.merchant.currency;
   const inv = data.invoice;
-  const asset = data.link.invoice?.asset as string | undefined;
-  const choice = picked ?? asset ?? 'near';
-  const canPay = !inv || inv.status === 'Open' || inv.status === 'Underpaid';
-  const locked = inv && inv.status !== 'Open';
+  const lockedAsset: string | undefined = data.link.invoice?.asset;
+  const choice = picked ?? lockedAsset ?? data.options.find((o: any) => o.amount)?.asset ?? 'near';
+  const status: string | undefined = inv?.status;
+  const isPaid = status && PAID.includes(status);
+  const canPay = !inv || status === 'Open' || status === 'Underpaid';
+  const lockedIn = inv && status !== 'Open'; // a payment was made: the coin can't change
+  const due = inv ? BigInt(inv.amount) - BigInt(inv.paid) : 0n;
+  const secs = inv ? Math.max(0, Math.round((inv.deadline - now) / 1000)) : 0;
+  const fiat = money(data.link.fiat_minor, cur);
+  const quote = data.link.invoice?.quote;
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(label); setErr(undefined);
     try { await fn(); refresh(); } catch (e: any) { setErr(e.message); } finally { setBusy(undefined); }
   };
-  const pay = (fraction?: number) => run(fraction ? 'Paying 80%…' : 'Paying…', async () => {
-    if (!inv || data.link.invoice.asset !== choice) await api(`/api/links/${id}/checkout`, { asset: choice });
+  const pay = (fraction?: number) => run(fraction ? 'Sending 80%…' : 'Paying…', async () => {
+    if (!inv || lockedAsset !== choice || status === 'Refunded') await api(`/api/links/${id}/checkout`, { asset: choice });
     await api(`/api/links/${id}/pay`, fraction ? { fraction } : {});
   });
 
-  const secsLeft = inv ? Math.max(0, Math.round((inv.deadline - now) / 1000)) : 0;
-  const due = inv ? BigInt(inv.amount) - BigInt(inv.paid) : 0n;
+  const k = (lockedIn ? lockedAsset : choice) as 'near' | 'eth' | 'usdc';
+  const payLabel = busy ?? (isPaid ? '✓ Paid'
+    : status === 'Refunded' ? 'Refunded'
+    : status === 'Underpaid' && lockedAsset === choice ? `Pay the missing ${coin(due.toString(), k)} ${SYMBOL[k]}`
+    : `Pay ${data.options.find((o: any) => o.asset === choice)?.amount ? coin(lockedAsset === choice && inv ? inv.amount : data.options.find((o: any) => o.asset === choice).amount, choice as any, 4) : ''} ${SYMBOL[choice]}`);
+
+  const at = status === 'Settled' ? 5 : status === 'Assigned' ? 3 : status === 'Paid' ? 2 : 1;
+  const steps = [
+    { t: status === 'Underpaid' ? 'Part of it is in escrow' : isPaid ? `${coin(inv.amount, k, 4)} ${SYMBOL[k]} held in escrow` : 'You pay into escrow', s: 'a contract on NEAR holds the coin', tx: data.link.payments?.[data.link.payments.length - 1]?.tx_url },
+    { t: `${quote?.provider ?? 'The best provider'} takes the job`, s: 'its quote was locked before you paid' },
+    { t: `${fiat} paid to ${data.merchant.display}'s bank`, s: 'usually about 5 seconds' },
+    { t: 'Escrow released to the provider', s: 'only after the bank credit' },
+  ];
 
   return (
-    <div className="checkout">
-      <div className="card">
-        <div className="muted">Pay {data.merchant.display}</div>
-        <div className="big">{data.price_display}</div>
-        {data.link.memo && <div>{data.link.memo}</div>}
-      </div>
-
-      <div className="card">
-        <div className="label">Pay with</div>
-        <div className="assets">
-          {data.options.map((o: any) => {
-            const mine = inv && asset === o.asset;
-            return (
-              <button key={o.asset} disabled={!!locked || !o.amount} className={`asset ${choice === o.asset ? 'on' : ''}`} onClick={() => setPicked(o.asset)}>
-                <b>{SYMBOL[o.asset]}</b>
-                <span className="amt">{mine ? fmtAssetAmount(inv.amount, inv.asset, cfg) : o.display}</span>
-                {(mine || o.provider) && (
-                  <small>
-                    via {mine ? data.link.invoice.quote.provider : o.provider} · incl. {mine ? data.link.invoice.quote.spread_bps / 100 : o.fee_pct}% conversion fee
-                  </small>
-                )}
-                <small>{o.label}</small>
-              </button>
-            );
-          })}
-        </div>
-        <div className="muted">
-          {inv && asset === choice
-            ? <>Locked: {data.link.invoice.quote.provider} pays {data.merchant.display} the full {data.price_display}; you pay exactly this amount (invoice #{inv.id}).{' '}
-                {inv.status === 'Open' || inv.status === 'Underpaid' ? `Valid for ${Math.floor(secsLeft / 60)}:${String(secsLeft % 60).padStart(2, '0')}.` : ''}</>
-            : <>Each amount is the best offramp quote that pays the merchant the full {data.price_display} ({data.rates_source} rates).
-                Choosing an asset locks that quote and creates an on-chain invoice for exactly that amount, valid 10 minutes.</>}
-        </div>
-
-        {canPay && (
-          <div className="row pay">
-            <button className="primary" disabled={!!busy} onClick={() => pay()}>
-              {busy ?? (inv?.status === 'Underpaid' && asset === choice ? `Pay remaining ${fmtAssetAmount(due.toString(), inv.asset, cfg)}` : `Pay with ${SYMBOL[choice]}`)}
-            </button>
-            {(!inv || inv.status === 'Open') && (
-              <button className="ghost" disabled={!!busy} onClick={() => pay(0.8)} title="Demo: send only 80% to show the Underpaid flow">Pay only 80% (demo)</button>
+    <Frame>
+      <div className="co">
+        {/* the phone: the same screen the landing page shows */}
+        <div className="phone">
+          <div className="screen">
+            <span className="notch" aria-hidden="true" />
+            <div className="merchant"><b aria-hidden="true">{MERCHANT_EMOJI[data.merchant.name] ?? '🛍️'}</b><span>{data.merchant.display}<small>{data.link.memo || 'Payment'}</small></span></div>
+            <div className="price">{fiat}</div>
+            <div className="sub">{isPaid ? 'Thank you, that\'s paid.' : 'Pick how you want to pay'}</div>
+            {data.options.map((o: any) => {
+              const mine = inv && lockedAsset === o.asset;
+              const amount = mine ? inv.amount : o.amount;
+              const prov = mine ? quote?.provider : o.provider, fee = mine ? quote?.spread_bps / 100 : o.fee_pct;
+              return (
+                <button key={o.asset} type="button" className={`coinrow ${choice === o.asset ? 'on' : ''}`}
+                  disabled={!!lockedIn || !o.amount || !!busy} aria-pressed={choice === o.asset} onClick={() => setPicked(o.asset)}>
+                  <CoinIcon k={o.asset} />
+                  <span><b>{SYMBOL[o.asset]}</b><small>{amount ? `via ${prov} · incl. ${fee}% fee` : 'no provider right now'}</small></span>
+                  <span className="amt">{amount ? coin(amount, o.asset) : '–'}</span>
+                </button>
+              );
+            })}
+            {inv && canPay && lockedAsset === choice && (
+              <div className="lockline"><span className="clock">{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</span>Price locked for this invoice (#{inv.id})</div>
             )}
+            {!inv && <div className="lockline">Choosing a coin locks the price for 10 minutes.</div>}
+            {data.message && status === 'Underpaid' && <p className="short">{data.message}</p>}
+            {data.message && status === 'Refunded' && <p className="short">{data.message}</p>}
+            {err && <p className="error" style={{ marginTop: 12 }}>{err}</p>}
+            <div className="grow" />
+            <button className={`paybtn ${isPaid ? 'done' : ''}`} disabled={!canPay || !!busy} onClick={() => pay()}>{payLabel}</button>
+            {canPay && (!inv || status === 'Open') && (
+              <div style={{ textAlign: 'center' }}><button className="demo80" disabled={!!busy} onClick={() => pay(0.8)} title="Demo: send only 80% to see the underpaid flow">Demo: pay only 80%</button></div>
+            )}
+            <p className="payer">Pays from the demo wallet {data.customer} (a server-held testnet key).<br />
+              {Object.entries(data.customer_balances ?? {}).map(([, v]) => v).join(' · ')}</p>
           </div>
-        )}
-        {err && <div className="error">{err}</div>}
-        <div className="muted small">
-          Payer: demo customer <code>{data.customer}</code> (server-held testnet key; demo convenience only).
-          Balance: {Object.entries(data.customer_balances ?? {}).map(([k, v]) => v).join(' · ')}
+        </div>
+
+        {/* beside it: where the money goes, live */}
+        <div className="side">
+          <h1>Pay {data.merchant.display}</h1>
+          <p className="lead">Pay with the crypto you already have. The shop gets paid in its own money, and nobody has to hold a coin they didn't want.</p>
+          <div className="gets"><div><span className="label">{data.merchant.display} receives</span><div className="v">{fiat}</div></div><span className="note">in full ✓</span></div>
+          <div className="next" aria-live="polite">
+            <span className="label">{status ? `What's happening · invoice #${inv.id}` : 'What happens when you pay'}</span>
+            <div className="steps">
+              {steps.map((x, i) => {
+                const n = i + 1, cls = status === 'Settled' || n < at ? 'done' : n === at && status && status !== 'Open' && status !== 'Refunded' ? 'cur' : '';
+                return (
+                  <div key={i} className={`st ${cls}`}><span className="k">{cls === 'done' ? '✓' : n}</span>
+                    <span>{x.t}<small>{x.s}{x.tx && cls === 'done' && <> · <a href={x.tx} target="_blank" rel="noreferrer">on NEAR ↗</a></>}</small></span></div>
+                );
+              })}
+            </div>
+          </div>
+          {cfg?.mode !== 'near' && <p className="muted" style={{ fontSize: 13 }}>Running on the offline demo chain: no testnet transactions are made.</p>}
         </div>
       </div>
+    </Frame>
+  );
+}
 
-      {inv && (
-        <div className="card">
-          <div className="label">Status</div>
-          <div className="steps">
-            {STEPS.map((s) => (
-              <span key={s} className={`step ${STEPS.indexOf(inv.status) >= STEPS.indexOf(s) ? 'done' : ''} ${inv.status === s ? 'cur' : ''}`}>{s}</span>
-            ))}
-          </div>
-          <p><span className={`status ${inv.status}`}>{inv.status}</span> {EXPLAIN[inv.status]}</p>
-          {data.message && inv.status !== 'Settled' && <p className="notice">{data.message}</p>}
-          <div className="muted">
-            Paid {fmtAssetAmount(inv.paid, inv.asset, cfg)} of {fmtAssetAmount(inv.amount, inv.asset, cfg)}
-            {inv.provider && <> · provider {inv.provider.split('.')[0]}</>}
-          </div>
-          <div className="txs">
-            <TxLink url={data.link.invoice?.tx_url} label="invoice created" />
-            {data.link.payments.map((p: any, i: number) => <TxLink key={p.tx} url={p.tx_url} label={`payment ${i + 1}`} />)}
-          </div>
-        </div>
-      )}
+function Frame({ children }: { children: React.ReactNode }) {
+  const cfg = useConfig();
+  return (
+    <div className="wrap">
+      <header className="co-top"><Logo /><span className={`right net ${cfg && cfg.mode !== 'near' ? 'mem' : ''}`}><i />Secure checkout · {cfg && cfg.mode !== 'near' ? 'offline demo' : 'NEAR testnet'}</span></header>
+      {children}
     </div>
   );
 }

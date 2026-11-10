@@ -109,6 +109,23 @@ export function createApp(opts: { chain: Chain; accounts: Accounts; stateDir: st
     res.json(link);
   }));
 
+  /** "Try a checkout" on the landing page: a fresh demo link for a merchant, then its checkout. */
+  const DEMO_ORDERS: Record<MerchantName, { price: string; memo: string }> = {
+    'bengaluru-cafe': { price: '420', memo: 'Masala dosa and filter coffee x2' },
+    'berlin-bikes': { price: '4.50', memo: 'Inner tube repair' },
+    'nairobi-tailor': { price: '650', memo: 'Shirt alteration' },
+  };
+  app.get('/try', (req, res) => {
+    const m = (MERCHANTS[req.query.m as MerchantName] ? req.query.m : 'bengaluru-cafe') as MerchantName;
+    const currency = MERCHANTS[m].currency;
+    const id = randomBytes(4).toString('hex');
+    const fiat = parseUnits(DEMO_ORDERS[m].price, CURRENCIES[currency].minor);
+    links.data.links[id] = { id, merchant: m, currency, fiat_minor: fiat.toString(), memo: DEMO_ORDERS[m].memo, created_at: Date.now(), payments: [] };
+    links.save();
+    log.add({ merchant: m, kind: 'link', text: `payment link ${id} created for ${fmtFiat(fiat, currency)} (${DEMO_ORDERS[m].memo})` });
+    res.redirect(302, `/pay/${id}`);
+  });
+
   // ------------------------------------------------------------ checkout API
   const customerBalances = async () => Object.fromEntries(await Promise.all(ASSET_KEYS.map(async (a) => {
     try { return [a, fmtAsset(await chain.balanceOf(accounts.customer, chain.assetId(a)), a, 4)]; } catch { return [a, '?']; }

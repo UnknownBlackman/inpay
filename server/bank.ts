@@ -5,7 +5,11 @@ import { Router } from 'express';
 import { JsonStore } from './store.ts';
 import { MERCHANTS, MERCHANT_NAMES } from './config.ts';
 
-export interface BankTxn { txn_id: string; ts: number; amount: string; currency: string; ref: string; from: string; balance_after: string }
+export interface BankTxn {
+  txn_id: string; ts: number; amount: string; currency: string; ref: string; from: string; balance_after: string;
+  /** rebuilt from the on-chain record after this file lost it (see reconcile) */
+  restored?: boolean;
+}
 export interface BankAccount { account: string; owner: string; currency: string; balance: string; statement: BankTxn[] }
 export interface Credit { account: string; amount: string; currency: string; ref: string; from?: string }
 
@@ -21,6 +25,31 @@ export class MockBank {
   }
 
   get(account: string) { return this.store.data.accounts[account]; }
+
+  /**
+   * Restores payouts the escrow contract proves happened (a Settled invoice carries the bank
+   * reference, amount and currency) but this file no longer has, e.g. after its state was wiped.
+   * No webhook is sent: these were confirmed long ago. Returns how many were restored.
+   */
+  reconcile(credits: { account: string; currency: string; amount: string; txn_id: string; ref: string; from: string; ts: number }[]): number {
+    let n = 0;
+    const touched = new Set<BankAccount>();
+    for (const c of credits) {
+      const a = this.get(c.account);
+      if (!a || a.currency !== c.currency || BigInt(c.amount) <= 0n) continue;
+      if (a.statement.some((t) => t.txn_id === c.txn_id || t.ref === c.ref)) continue;
+      a.statement.push({ txn_id: c.txn_id, ts: c.ts, amount: c.amount, currency: c.currency, ref: c.ref, from: c.from, balance_after: '0', restored: true });
+      touched.add(a); n++;
+    }
+    for (const a of touched) {
+      a.statement.sort((x, y) => x.ts - y.ts);
+      let bal = 0n;
+      for (const t of a.statement) { bal += BigInt(t.amount); t.balance_after = bal.toString(); }
+      a.balance = bal.toString();
+    }
+    if (n) this.store.save();
+    return n;
+  }
 
   async credit(c: Credit): Promise<BankTxn> {
     const acct = this.get(c.account);
