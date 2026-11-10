@@ -1,0 +1,11 @@
+node_modules/
+target/
+dist/
+.keys/
+.env
+.state/
+*.log
+.build/
+web/dist/
+.taste-skill/
+shots/

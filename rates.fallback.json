@@ -1,0 +1,5 @@
+{
+  "_note": "Fixed fallback rates (snapshot of CoinGecko and open.er-api.com on 2026-11-10). Used when the live sources are unreachable and no recent live rates are saved, and always by `npm run sim` and the unit tests.",
+  "usd": { "near": 3.6, "eth": 2100, "usdc": 1.0 },
+  "fx": { "INR": 93.9, "EUR": 0.89, "KES": 129.9 }
+}

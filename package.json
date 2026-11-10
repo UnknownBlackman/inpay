@@ -1,0 +1,51 @@
+{
+  "name": "inpay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:contract": "node scripts/build-contract.mjs",
+    "test": "npm run test:unit && npm run test:contract",
+    "test:unit": "tsx --test --test-concurrency=1 tests/unit/pricing.test.ts tests/unit/auction.test.ts tests/unit/agent.test.ts",
+    "test:contract": "node scripts/test-contract.mjs",
+    "sim": "tsx scripts/sim.ts",
+    "setup": "tsx scripts/setup.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "dev": "concurrently -k -n server,web -c blue,green \"tsx server/index.ts\" \"vite --config web/vite.config.ts\"",
+    "demo": "tsx scripts/demo.ts",
+    "build:web": "vite build --config web/vite.config.ts",
+    "start": "tsx server/index.ts",
+    "scenarios": "tsx scripts/run-scenarios.ts"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "near-api-js": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.6"
+  },
+  "optionalDependencies": {
+    "near-workspaces": "^5.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "near-sandbox@0.1.5": true
+  }
+}
