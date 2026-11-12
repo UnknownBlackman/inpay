@@ -16,6 +16,8 @@
   </picture>
   <br>
   <a href="https://inpay-na7v.onrender.com/"><strong>🚀 Live Hosted App: inpay-na7v.onrender.com</strong></a>
+  <br>
+  <sub><em>⏳ <strong>Note for judges & visitors:</strong> Render rests free instances after inactivity. If the app is sleeping, the first page load may take ~50 seconds to bring it back online. Once awake, everything runs instantly!</em></sub>
 </p>
 
 ## Receiving payments should be easy. 
@@ -110,6 +112,10 @@ Both modes show the same pages, quotes, failover and refunds. The testnet accoun
 
 INPay is deployed and live at **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)**.
 
+> [!NOTE]
+> **Notice for Hackathon Judges & Visitors (Cold Starts):**  
+> The demo is hosted on Render's free tier. Render automatically rests idle containers after a period of inactivity. If the service is resting when you visit, **the initial request may take ~45–60 seconds to bring the container back online**. Once woken up, all page loads, merchant dashboards, live quotes, and checkout interactions are fast and responsive.
+
 The repository includes a Render Blueprint (`render.yaml`): one Node web service that serves the landing page, the merchant app and the API, and runs the agents, simulated providers and simulated bank.
 
 1. **Live Hosted Link:** Visit **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)** to test the interactive checkout, merchant dashboard, and simulated bank statements directly in your browser.
@@ -123,7 +129,7 @@ Render's free plan sleeps after inactivity, so the first visit can take about a 
 
 ## Experience the interactive demo
 
-You can try INPay right now on our live hosted instance at **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)**, or start the demo stack locally:
+You can try INPay right now on our live hosted instance at **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)** *(please allow ~50s on initial load if waking from Render's idle sleep)*, or start the demo stack locally:
 
 ```bash
 npm run demo
