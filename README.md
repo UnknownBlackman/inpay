@@ -15,6 +15,7 @@
     <img alt="INPay Logo" src="web/brand/logo.svg" width="130">
   </picture>
   <br>
+  <a href="https://inpay-na7v.onrender.com/"><strong>🚀 Live Hosted App: inpay-na7v.onrender.com</strong></a>
 </p>
 
 ## Receiving payments should be easy. 
@@ -105,13 +106,16 @@ npm run smoke
 
 Both modes show the same pages, quotes, failover and refunds. The testnet accounts and keys this project was built with are not in the repository (`.keys/` is gitignored), so a fresh clone starts offline. `npm run setup` creates your own copy of everything on testnet: the escrow contract, the wETH and USDC test tokens, three merchants, three providers and a funded demo customer. Prefer not to spend testnet NEAR? The [real testnet transactions](#real-proof-transactions-on-near-testnet) from our own runs are linked below.
 
-### Deploy to Render (one link for judges)
+### Live on Render & Deploy Blueprint
+
+INPay is deployed and live at **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)**.
 
 The repository includes a Render Blueprint (`render.yaml`): one Node web service that serves the landing page, the merchant app and the API, and runs the agents, simulated providers and simulated bank.
 
-1. Render dashboard → **New → Blueprint** → pick this repository. It builds with `npm run build`, starts with `npm start` and checks `/healthz`.
-2. Without secrets it runs the **offline demo** and says so on every page.
-3. For **real testnet payments**, run `npm run render:env` locally after `npm run setup`. It writes `.keys/render.env` (gitignored) holding two values, `INPAY_DEPLOYMENT` and `INPAY_KEYS`. Add both as secret environment variables on the service and redeploy. `INPAY_KEYS` holds only the keys the app signs with (the three merchants and the demo customer); your master account key is never included. These are testnet-only keys, held server-side as a demo convenience.
+1. **Live Hosted Link:** Visit **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)** to test the interactive checkout, merchant dashboard, and simulated bank statements directly in your browser.
+2. **Deploy your own:** Render dashboard → **New → Blueprint** → pick this repository. It builds with `npm run build`, starts with `npm start` and checks `/healthz`.
+3. Without secrets it runs the **offline demo** and says so on every page.
+4. For **real testnet payments**, run `npm run render:env` locally after `npm run setup`. It writes `.keys/render.env` (gitignored) holding two values, `INPAY_DEPLOYMENT` and `INPAY_KEYS`. Add both as secret environment variables on the service and redeploy. `INPAY_KEYS` holds only the keys the app signs with (the three merchants and the demo customer); your master account key is never included. These are testnet-only keys, held server-side as a demo convenience.
 
 Render's free plan sleeps after inactivity, so the first visit can take about a minute to wake. Its disk is reset on each deploy: the demo links are recreated and the simulated bank rebuilds its payouts from the settled invoices on-chain.
 
@@ -119,33 +123,33 @@ Render's free plan sleeps after inactivity, so the first visit can take about a 
 
 ## Experience the interactive demo
 
-Start the full demo stack locally:
+You can try INPay right now on our live hosted instance at **[https://inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)**, or start the demo stack locally:
 
 ```bash
 npm run demo
 ```
 *This starts all background services with fresh state, activates simulated providers with a 15-second payout timeout, and simulates a payment rail outage on PayRail (`FAIL_PROVIDER=payrail`).*
 
-Open **http://127.0.0.1:5190** in your browser and try these three real-world stories:
+Try these three real-world stories (hosted on **[inpay-na7v.onrender.com](https://inpay-na7v.onrender.com)** or locally on `http://127.0.0.1:5190`):
 
 1. **The Bengaluru Café — Fast, happy-path payment (INR)**
-   - Open **http://127.0.0.1:5190/pay/demo-cafe**
+   - Open [https://inpay-na7v.onrender.com/pay/demo-cafe](https://inpay-na7v.onrender.com/pay/demo-cafe) (or `http://127.0.0.1:5190/pay/demo-cafe`)
    - The invoice shows the bill (**420.00 INR**), the exact crypto required, which provider won the quote auction, and the transparent fee included.
    - Choose **NEAR** and click **Pay**.
-   - Check the merchant dashboard at **http://127.0.0.1:5190/dashboard?m=bengaluru-cafe**: you will see the quote locked before payment (*"swiftcash locked before payment, customer pays 1.7% less than with the worst quote"*), the payment verified on-chain, the bank credit of the full 420.00 INR, and `confirm_payout` releasing the NEAR to SwiftCash.
+   - Check the merchant dashboard at [https://inpay-na7v.onrender.com/dashboard?m=bengaluru-cafe](https://inpay-na7v.onrender.com/dashboard?m=bengaluru-cafe): you will see the quote locked before payment (*"swiftcash locked before payment, customer pays 1.7% less than with the worst quote"*), the payment verified on-chain, the bank credit of the full 420.00 INR, and `confirm_payout` releasing the NEAR to SwiftCash.
 
 2. **The Berlin Bike Shop — Automatic failover when a rail stalls (EUR)**
-   - Open **http://127.0.0.1:5190/pay/demo-bikes** for a **4.50 EUR** tune-up.
+   - Open [https://inpay-na7v.onrender.com/pay/demo-bikes](https://inpay-na7v.onrender.com/pay/demo-bikes) (or `http://127.0.0.1:5190/pay/demo-bikes`) for a **4.50 EUR** tune-up.
    - Choose **ETH** and click **Pay**.
    - SwiftCash doesn't support ETH, so PayRail wins the quote. However, PayRail's payout stalls and never credits the bank.
    - After 15 seconds, the autonomous agent flags PayRail as failed, re-quotes the escrowed ETH to fallback provider QuickFX, reassigns the invoice on-chain, receives the 4.45 EUR bank credit (reflecting QuickFX's slightly wider spread, clearly reported in the log), and confirms the payout. The merchant gets paid even when a payment rail fails!
 
 3. **The Nairobi Tailor — Handling an underpayment gracefully (KES)**
-   - Open **http://127.0.0.1:5190/pay/demo-tailor** for a **650.00 KES** garment.
+   - Open [https://inpay-na7v.onrender.com/pay/demo-tailor](https://inpay-na7v.onrender.com/pay/demo-tailor) (or `http://127.0.0.1:5190/pay/demo-tailor`) for a **650.00 KES** garment.
    - Choose **USDC** and click **Demo: pay only 80%**.
    - The invoice immediately updates to **Underpaid**, clearly displaying the exact remaining balance needed.
    - Click **Pay the missing …**: the top-up transaction settles on-chain, and the full 650.00 KES lands in the merchant bank account.
-   - Check the simulated bank statement at **http://127.0.0.1:5190/bank/nairobi-tailor**.
+   - Check the simulated bank statement at [https://inpay-na7v.onrender.com/bank/nairobi-tailor](https://inpay-na7v.onrender.com/bank/nairobi-tailor).
    *(Note: If the customer never tops up before the deadline, anyone can trigger `refund` on-chain to return 100% of their deposited funds).*
 
 To run through all three checkouts headlessly, open a second terminal while `npm run demo` is active and run:
