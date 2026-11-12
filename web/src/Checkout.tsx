@@ -16,6 +16,8 @@ export function Checkout() {
   const [picked, setPicked] = useState<string>();
   const [busy, setBusy] = useState<string>();
   const [err, setErr] = useState<string>();
+  // what the Pay button is waiting for right now, shown under it (testnet transactions take seconds)
+  const [phase, setPhase] = useState<{ step: number; of: number; text: string; sub: string; started: number }>();
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
@@ -37,10 +39,18 @@ export function Checkout() {
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(label); setErr(undefined);
-    try { await fn(); refresh(); } catch (e: any) { setErr(e.message); } finally { setBusy(undefined); }
+    try { await fn(); refresh(); } catch (e: any) { setErr(e.message); } finally { setBusy(undefined); setPhase(undefined); }
   };
   const pay = (fraction?: number) => run(fraction ? 'Sending 80%…' : 'Paying…', async () => {
-    if (!inv || lockedAsset !== choice || status === 'Refunded') await api(`/api/links/${id}/checkout`, { asset: choice });
+    const needInvoice = !inv || lockedAsset !== choice || status === 'Refunded';
+    const of = needInvoice ? 2 : 1;
+    const opt = data.options.find((o: any) => o.asset === choice);
+    const amt = opt?.amount ? `${coin(opt.amount, choice as any, 4)} ${SYMBOL[choice]}` : SYMBOL[choice];
+    if (needInvoice) {
+      setPhase({ step: 1, of, text: 'Locking your price on NEAR…', sub: `Creating the invoice for ${amt} in the escrow contract`, started: Date.now() });
+      await api(`/api/links/${id}/checkout`, { asset: choice });
+    }
+    setPhase({ step: of, of, text: fraction ? 'Sending 80% to escrow…' : `Sending ${amt} to escrow…`, sub: 'Waiting for NEAR testnet to confirm the transaction', started: Date.now() });
     await api(`/api/links/${id}/pay`, fraction ? { fraction } : {});
   });
 
@@ -59,7 +69,7 @@ export function Checkout() {
   ];
 
   return (
-    <Frame>
+    <Frame merchant={data.merchant.name}>
       <div className="co">
         {/* the phone: the same screen the landing page shows */}
         <div className="phone">
@@ -90,7 +100,15 @@ export function Checkout() {
             {err && <p className="error" style={{ marginTop: 12 }}>{err}</p>}
             <div className="grow" />
             <button className={`paybtn ${isPaid ? 'done' : ''}`} disabled={!canPay || !!busy} onClick={() => pay()}>{payLabel}</button>
-            {canPay && (!inv || status === 'Open') && (
+            {phase && (
+              <div className="progress" role="status" aria-live="polite">
+                <span className="spin" aria-hidden="true" />
+                <div><b>{phase.text}</b><small>{phase.sub}</small>
+                  <small className="t">Step {phase.step} of {phase.of} · {Math.max(0, Math.round((now - phase.started) / 1000))} s · testnet transactions usually take 3 to 10 seconds</small></div>
+              </div>
+            )}
+            {isPaid && <a className="tomerchant" href={`/dashboard?m=${data.merchant.name}`}>See it on {data.merchant.display}'s dashboard →</a>}
+            {canPay && !phase && (!inv || status === 'Open') && (
               <div style={{ textAlign: 'center' }}><button className="demo80" disabled={!!busy} onClick={() => pay(0.8)} title="Demo: send only 80% to see the underpaid flow">Demo: pay only 80%</button></div>
             )}
             <p className="payer">Pays from the demo wallet {data.customer} (a server-held testnet key).<br />
@@ -115,18 +133,23 @@ export function Checkout() {
               })}
             </div>
           </div>
-          {cfg?.mode !== 'near' && <p className="muted" style={{ fontSize: 13 }}>Running on the offline demo chain: no testnet transactions are made.</p>}
+          {cfg && cfg.mode !== 'near' && <p className="offline-note">Offline demo: this payment settles on an in-memory copy of the escrow contract, not on NEAR testnet. Run <code>npm run setup</code> with your own testnet account to make it real (see the README).</p>}
         </div>
       </div>
     </Frame>
   );
 }
 
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ children, merchant }: { children: React.ReactNode; merchant?: string }) {
   const cfg = useConfig();
   return (
     <div className="wrap">
-      <header className="co-top"><Logo /><span className={`right net ${cfg && cfg.mode !== 'near' ? 'mem' : ''}`}><i />Secure checkout · {cfg && cfg.mode !== 'near' ? 'offline demo' : 'NEAR testnet'}</span></header>
+      <header className="co-top"><Logo />
+        <div className="right">
+          <span className={`net ${cfg && cfg.mode !== 'near' ? 'mem' : ''}`}><i />Secure checkout · {cfg && cfg.mode !== 'near' ? 'offline demo' : 'NEAR testnet'}</span>
+          <a className="btn btn--ghost" href={merchant ? `/dashboard?m=${merchant}` : '/dashboard'}>Merchant dashboard →</a>
+        </div>
+      </header>
       {children}
     </div>
   );

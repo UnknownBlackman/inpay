@@ -1,0 +1,36 @@
+# Render Blueprint: one web service that serves the landing page, the merchant app and the API,
+# and runs the merchant agents, simulated providers and simulated bank.
+# Deploy: Render dashboard > New > Blueprint > pick this repository.
+# Without INPAY_DEPLOYMENT / INPAY_KEYS it runs the offline demo (in-memory chain) and says so.
+# With them (from `npm run render:env`) it runs against your NEAR testnet deployment.
+services:
+  - type: web
+    name: inpay
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev --omit=optional && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEAR_RPC_URL
+        value: https://test.rpc.fastnear.com
+      # the demo story: payrail wins ETH quotes but never pays, the agent fails over after 15 s
+      - key: FAIL_PROVIDER
+        value: payrail
+      - key: DEMO_TIMEOUT_SECONDS
+        value: "15"
+      # testnet deployment + signing keys: paste from .keys/render.env (npm run render:env)
+      - key: INPAY_DEPLOYMENT
+        sync: false
+      - key: INPAY_KEYS
+        sync: false
+      # optional: friendlier log wording via any OpenAI-compatible API (e.g. NEAR AI Cloud)
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false

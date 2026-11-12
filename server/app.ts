@@ -54,6 +54,8 @@ export function createApp(opts: { chain: Chain; accounts: Accounts; stateDir: st
 
   const app = express();
   app.use(express.json());
+  // for the host's health check: answers at once, touches no chain or rate API
+  app.get('/healthz', (_req, res) => { res.json({ ok: true, mode: chain.kind }); });
   const wrap = (fn: (req: express.Request, res: express.Response) => Promise<unknown>) =>
     (req: express.Request, res: express.Response) => fn(req, res).catch((e) => res.status(e.status ?? 500).json({ error: e.message }));
   const fail = (status: number, message: string) => Object.assign(new Error(message), { status });
@@ -219,7 +221,8 @@ export function createApp(opts: { chain: Chain; accounts: Accounts; stateDir: st
     links.save();
     log.add({ merchant: link.merchant, invoice_id: inv.id, kind: 'payment', tx: tx.hash, tx_url: chain.txUrl(tx.hash),
       text: `customer ${accounts.customer} sent ${fmtAsset(amount, link.invoice.asset)} to escrow for invoice #${inv.id}` });
-    await agents[link.merchant].tick(); // react right away instead of waiting for the next loop
+    // The agent reacts right away, in the background: the customer's answer doesn't wait for it.
+    agents[link.merchant].tick().catch((e) => console.error(`[agent ${link.merchant}]`, e.message));
     res.json({ tx: tx.hash, tx_url: chain.txUrl(tx.hash), invoice: await chain.getInvoice(inv.id) });
   }));
 
@@ -233,7 +236,10 @@ export function createApp(opts: { chain: Chain; accounts: Accounts; stateDir: st
           ? new Error(`port ${port} is already in use by another program. Stop it, or start INPay with PORT=<free port>.`)
           : e));
       });
-      baseUrl = `http://${host}:${(server.address() as AddressInfo).port}`;
+      // internal calls (agent -> providers, bank -> agent) always go over loopback, even when the
+      // server listens on every interface (0.0.0.0 on a host such as Render)
+      const self = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
+      baseUrl = `http://${self}:${(server.address() as AddressInfo).port}`;
       for (const a of Object.values(agents)) a.start();
       return {
         url: baseUrl,

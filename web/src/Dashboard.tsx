@@ -74,6 +74,9 @@ export function Dashboard() {
         )}
       </div>
       {err && !data && <p className="error">Can't reach the INPay server: {err}</p>}
+      {cfg && cfg.mode !== 'near' && (
+        <p className="offline-note">Offline demo: payments here settle on an in-memory copy of the escrow contract, not on NEAR testnet. To make them real, run <code>npm run setup</code> with your own testnet account (about 20 testnet NEAR). See “Offline demo or real testnet?” in the README.</p>
+      )}
 
       <div className="grid">
         <Balance data={data} stmt={stmt} cur={cur} m={m} />

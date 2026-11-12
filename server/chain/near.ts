@@ -20,15 +20,25 @@ export interface Deployment {
   deploy_tx?: Record<string, string>;
 }
 
+// Locally the deployment and keys come from .keys/ (npm run setup). On a host with no .keys/
+// (Render), they come from two secret env vars written by `npm run render:env`:
+//   INPAY_DEPLOYMENT  the contents of .keys/deployment.json
+//   INPAY_KEYS        {"<account id>": "ed25519:<private key>", ...}
 export function loadDeployment(): Deployment | null {
   const f = path.join(KEYS_DIR, 'deployment.json');
-  return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null;
+  if (existsSync(f)) return JSON.parse(readFileSync(f, 'utf8'));
+  if (process.env.INPAY_DEPLOYMENT) return JSON.parse(process.env.INPAY_DEPLOYMENT);
+  return null;
 }
 
+let envKeys: Record<string, KeyPairString> | undefined;
 export function loadKey(accountId: string): KeyPairString {
   const f = path.join(KEYS_DIR, `${accountId}.json`);
-  if (!existsSync(f)) throw new Error(`no key for ${accountId} in .keys/ (run npm run setup)`);
-  return JSON.parse(readFileSync(f, 'utf8')).private_key;
+  if (existsSync(f)) return JSON.parse(readFileSync(f, 'utf8')).private_key;
+  envKeys ??= process.env.INPAY_KEYS ? JSON.parse(process.env.INPAY_KEYS) : {};
+  const k = envKeys![accountId];
+  if (!k) throw new Error(`no key for ${accountId} in .keys/ or INPAY_KEYS (run npm run setup)`);
+  return k;
 }
 
 const TGAS = 10n ** 12n;

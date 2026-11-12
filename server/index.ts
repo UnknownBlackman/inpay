@@ -11,7 +11,8 @@ import { MemoryChain } from './chain/memory.ts';
 import { parseUnits } from './pricing.ts';
 import type { Chain } from './chain/types.ts';
 import { getRates } from './rates.ts';
-import { MERCHANTS, type MerchantName } from './config.ts';
+import { CURRENCIES, MERCHANTS, type MerchantName } from './config.ts';
+import { SCENARIOS } from '../scripts/scenarios.ts';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const dep = process.env.CHAIN === 'memory' ? null : loadDeployment();
@@ -31,6 +32,16 @@ if (dep) {
 
 const sys = createApp({ chain, accounts, stateDir: dep ? path.join(ROOT, '.state') : null });
 
+// The demo checkout links the README and landing page point to (/pay/demo-cafe ...), recreated
+// when missing: a host like Render starts each deploy with an empty disk.
+for (const [i, s] of SCENARIOS.entries()) {
+  const id = ['demo-cafe', 'demo-bikes', 'demo-tailor'][i];
+  if (sys.links.data.links[id]) continue;
+  const currency = MERCHANTS[s.merchant].currency;
+  sys.links.data.links[id] = { id, merchant: s.merchant, currency, fiat_minor: parseUnits(s.price, CURRENCIES[currency].minor).toString(), memo: s.memo, created_at: Date.now() + i, payments: [] };
+}
+sys.links.save();
+
 // Serve the built web app if present (npm run build:web); in dev, Vite serves it on :5190.
 const dist = path.join(ROOT, 'web', 'dist');
 if (existsSync(dist)) {
@@ -42,10 +53,12 @@ if (existsSync(dist)) {
 const warm = await getRates(); // first call waits for live rates (falls back if unreachable)
 console.log(`rates: ${warm.source} (NEAR ${warm.usd.near} USD, ETH ${warm.usd.eth} USD, ${warm.fx.INR} INR per USD)`);
 const port = Number(process.env.PORT ?? 8790);
-const srv = await sys.listen(port);
+// Render (and similar hosts) route traffic to the container: listen on every interface there
+const host = process.env.HOST ?? (process.env.RENDER ? '0.0.0.0' : '127.0.0.1');
+const srv = await sys.listen(port, host);
 console.log(`INPay services on ${srv.url}  (chain: ${dep ? `NEAR testnet, contract ${dep.contract}` : 'in-memory (no .keys/deployment.json)'})`);
 console.log(`  FAIL_PROVIDER=${process.env.FAIL_PROVIDER ?? '-'}  payout timeout ${process.env.DEMO_TIMEOUT_SECONDS ?? 60}s`);
-console.log(`  web: http://127.0.0.1:${process.env.WEB_PORT ?? 5190}`);
+console.log(existsSync(dist) ? `  web: served from web/dist on the same port (${host}:${port})` : `  web: http://127.0.0.1:${process.env.WEB_PORT ?? 5190} (vite dev server)`);
 
 // The simulated bank lives in .state/bank.json, the invoices on-chain. If the bank file was lost,
 // rebuild its payouts from the Settled invoices (each carries its bank reference, amount and

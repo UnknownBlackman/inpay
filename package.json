@@ -19,12 +19,15 @@
     "demo": "tsx scripts/demo.ts",
     "build:web": "vite build --config web/vite.config.ts",
     "start": "tsx server/index.ts",
-    "scenarios": "tsx scripts/run-scenarios.ts"
+    "scenarios": "tsx scripts/run-scenarios.ts",
+    "build": "npm run build:web",
+    "render:env": "tsx scripts/render-env.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.10",
     "express": "^5.3.0",
-    "near-api-js": "^7.4.0"
+    "near-api-js": "^7.4.0",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -36,7 +39,6 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",
-    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^6.4.6"
   },

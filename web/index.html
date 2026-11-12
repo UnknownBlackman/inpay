@@ -8,7 +8,7 @@
 <meta property="og:title" content="INPay: crypto checkout that pays you in your own money">
 <meta property="og:description" content="They pay in crypto. You get paid in cash. Live on NEAR testnet.">
 <meta name="theme-color" content="#FFF7EE">
-<link rel="icon" href="/brand/logo-still.svg" type="image/svg+xml">
+<link rel="icon" href="brand/logo-still.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -274,7 +274,7 @@ section{position:relative;overflow:hidden}
 </head>
 <body>
 <header class="nav"><div class="wrap">
-  <a class="logo" href="/" aria-label="INPay home"><img src="/brand/logo.svg" alt="INPay"></a>
+  <a class="logo" href="/" aria-label="INPay home"><img src="brand/logo.svg" alt="INPay"></a>
   <nav class="nav__links" aria-label="Main"><a href="#coins">How it works</a><a href="#escrow">Escrow</a><a href="#proof">Proof</a><a href="#questions">Questions</a></nav>
   <div class="nav__right"><a class="plain" href="/dashboard">Merchant dashboard</a><a class="btn btn--primary" href="/try">Try a checkout</a></div>
   <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet">☰</button>
@@ -288,9 +288,9 @@ section{position:relative;overflow:hidden}
 <!-- 1 HERO -->
 <section class="hero" aria-labelledby="hero-h"><div class="wrap">
   <div>
-    <span class="eyebrow"><i></i>Live on NEAR testnet</span>
+    <span class="eyebrow" id="mode"><i></i>Live on NEAR testnet</span>
     <h1 id="hero-h">Receiving payment should be <span class="u">easy.<svg viewBox="0 0 300 40" preserveAspectRatio="none"><path d="M4 28 C 70 8, 160 6, 296 22" fill="none" stroke="#FF5A36" stroke-width="9" stroke-linecap="round"/></svg></span></h1>
-    <p class="lead">Send your customer a link with the price in your own money. They pay with the crypto they already have, and cash lands in your bank. You never touch a coin.</p>
+    <p class="lead">Request payment in your own money. Customers pay with the crypto they already have, and cash lands in your bank.</p>
     <div class="btns"><a class="btn btn--primary" href="/try">Try a checkout →</a><a class="btn btn--ghost" href="#escrow">See how it works</a></div>
     <div class="chips"><span class="lbl">Price it in</span><span class="c">₹ INR</span><span class="c">€ EUR</span><span class="c">KSh KES</span><span>your local currency</span></div>
   </div>
@@ -426,10 +426,10 @@ section{position:relative;overflow:hidden}
 <section class="faq" id="questions"><div class="wrap">
   <div><h2>Questions merchants ask us</h2><span class="note2">short answers, promise</span></div>
   <div class="qa">
-    <div><h3>Do I ever hold crypto?</h3><p>No. The coin sits in the escrow contract and goes to the payout provider. You only ever see money in your own currency.</p></div>
-    <div><h3>What does it cost my customer?</h3><p>The provider's conversion fee, between 0.8% and 2.5%, shown on the checkout before they pay.</p></div>
-    <div><h3>What if they send the wrong amount?</h3><p>Extra comes straight back. Too little, and they see exactly what's missing; if they don't top up in 10 minutes, everything is refunded.</p></div>
-    <div><h3>Can I use it with real money today?</h3><p>Not yet. It runs on NEAR testnet, with simulated payout providers and banks.</p></div>
+    <div id="q-crypto"><h3>Do I ever hold crypto?</h3><p>No. The coin sits in the escrow contract and goes to the payout provider. You only ever see money in your own currency.</p></div>
+    <div id="q-fees"><h3>What does it cost my customer?</h3><p>The provider's conversion fee, between 0.8% and 2.5%, shown on the checkout before they pay.</p></div>
+    <div id="q-amount"><h3>What if they send the wrong amount?</h3><p>Extra comes straight back. Too little, and they see exactly what's missing; if they don't top up in 10 minutes, everything is refunded.</p></div>
+    <div id="q-live"><h3>Can I use it with real money today?</h3><p>Not yet. It runs on NEAR testnet, with simulated payout providers and banks.</p></div>
   </div>
 </div></section>
 </main>
@@ -437,17 +437,24 @@ section{position:relative;overflow:hidden}
 <!-- 9 CLOSE + FOOTER -->
 <footer class="close"><div class="wrap">
   <div class="top"><h2>Take your first crypto payment today</h2><a class="btn btn--light" href="/try">Try a checkout →</a></div>
-  <div class="biglogo"><img id="closelogo" src="/brand/logo-still.svg" alt="INPay"></div>
+  <div class="biglogo"><img id="closelogo" src="brand/logo-still.svg" alt="INPay"></div>
   <div class="fcols">
     <div><p style="font:600 20px/1.3 var(--display);color:#fff;max-width:20ch">Crypto in, your own money out.</p></div>
     <div><h4>How it works</h4><a href="/try">Checkout</a><a href="/dashboard">Merchant view</a><a href="#features">Failover</a></div>
-    <div><h4>Escrow</h4><a href="#escrow">Release rule</a><a href="#questions">Refunds</a></div>
+    <div><h4>Escrow</h4><a href="#escrow">Release rule</a><a href="#q-amount">Refunds</a></div>
     <div><h4>Proof</h4><a href="#proof">Testnet transactions</a><a href="#proof">Real vs simulated</a></div>
-    <div><h4>Questions</h4><a href="#questions">Fees</a><a href="#questions">Is it live?</a></div>
+    <div><h4>Questions</h4><a href="#q-crypto">Holding crypto</a><a href="#q-fees">Customer fees</a><a href="#q-amount">Wrong amounts</a><a href="#q-live">Is it live?</a></div>
   </div>
-  <div class="legal"><span>© 2026 INPay. <span> All rights reserved! </span></div>
+  <div class="legal"><span>© 2026 INPay. All rights reserved!</span></div>
 </div></footer>
 <script>
+  // say which mode this server runs in: real NEAR testnet, or the offline demo a fresh clone starts in
+  fetch('/api/config').then((r) => r.ok ? r.json() : null).then((c) => {
+    if (c && c.mode !== 'near') {
+      const m = document.getElementById('mode');
+      m.innerHTML = '<i style="background:#b7791f;box-shadow:0 0 0 4px rgba(183,121,31,.18)"></i>Offline demo · run npm run setup for real testnet';
+    }
+  }).catch(() => {});
   // phone menu: opens and closes the sheet; any link in it closes it
   const burger = document.querySelector('.burger'), sheet = document.getElementById('sheet');
   const setMenu = (open) => { sheet.classList.toggle('open', open); burger.setAttribute('aria-expanded', String(open)); burger.textContent = open ? '✕' : '☰'; };
@@ -463,7 +470,7 @@ section{position:relative;overflow:hidden}
   addEventListener('resize', fitAll); fitAll(); document.fonts && document.fonts.ready.then(fitAll);
   const logo = document.getElementById('closelogo');
   if (logo && 'IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { logo.src = '/brand/logo.svg?play=' + Date.now(); o.disconnect(); } }, { threshold: .5 }).observe(logo);
+    new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { logo.src = 'brand/logo.svg?play=' + Date.now(); o.disconnect(); } }, { threshold: .5 }).observe(logo);
   }
 </script>
 </body>

@@ -234,3 +234,15 @@ tr.hl td{background:#fffaf0}
   .bank-grid{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+
+/* checkout: what the Pay button is waiting for */
+.co-top .right{display:flex;align-items:center;gap:12px}
+.progress{display:flex;gap:12px;align-items:flex-start;margin-top:12px;background:var(--blue-soft);border-radius:16px;padding:12px 14px;font-size:13px;line-height:1.4}
+.progress b{display:block;font-weight:600} .progress small{display:block;color:var(--muted);margin-top:2px} .progress small.t{font-size:11px;margin-top:6px}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(43,92,245,.25);border-top-color:var(--blue);flex:none;margin-top:1px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tomerchant{display:block;text-align:center;margin-top:12px;font:600 14px/1.3 var(--text);color:var(--blue);text-decoration:none}
+.tomerchant:hover{text-decoration:underline}
+@media (max-width:860px){ .co-top .net{display:none} .co-top .btn{height:40px;padding:0 14px} }
+.offline-note{background:var(--butter);border:1.5px dashed rgba(10,10,10,.3);border-radius:16px;padding:10px 14px;font-size:13px;line-height:1.5;margin:0 0 18px}
+.offline-note code{font:500 12px/1 var(--mono);background:#fff;padding:2px 6px;border-radius:6px}

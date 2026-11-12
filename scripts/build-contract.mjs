@@ -14,7 +14,7 @@ const FT_COMMIT = '15360ac443fe91e9d55a3b3db616fe6eb6514942';
 const flags = { RUSTFLAGS: '-C link-arg=-s' };
 
 sh('cargo build --target wasm32-unknown-unknown --release', path.join(root, 'contract'), flags);
-cpSync(path.join(root, 'contract/target/wasm32-unknown-unknown/release/inpay.wasm'), path.join(root, 'contract/res/inpay.wasm'));
+sh(`npx --yes wasm-opt -O "${path.join(root, 'contract/target/wasm32-unknown-unknown/release/inpay.wasm')}" -o "${path.join(root, 'contract/res/inpay.wasm')}"`, root);
 
 if (process.argv.includes('--ft')) {
   const ft = path.join(root, '.build/ft');
@@ -28,6 +28,6 @@ if (process.argv.includes('--ft')) {
   writeFileSync(path.join(ft, 'Cargo.toml'), toml);
   sh('cargo +1.86.0 generate-lockfile', ft, { CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: 'fallback' });
   sh('cargo +1.86.0 build --target wasm32-unknown-unknown --release --lib', ft, flags);
-  cpSync(path.join(ft, 'target/wasm32-unknown-unknown/release/fungible_token.wasm'), path.join(root, 'contract/res/fungible_token.wasm'));
+  sh(`npx --yes wasm-opt -O "${path.join(ft, 'target/wasm32-unknown-unknown/release/fungible_token.wasm')}" -o "${path.join(root, 'contract/res/fungible_token.wasm')}"`, root);
 }
 console.log('wasm files are in contract/res/');
