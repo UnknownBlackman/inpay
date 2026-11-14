@@ -1,0 +1,94 @@
+{
+  "network": "mainnet",
+  "accounts": {
+    "contract": "inpay.0xforge.near",
+    "merchant": "bengaluru-cafe.0xforge.near",
+    "provider": "swiftcash.0xforge.near",
+    "customer": "0xforge.near"
+  },
+  "steps": {
+    "create inpay.0xforge.near": {
+      "tx": "https://nearblocks.io/txns/iu4pGHNs4dCcbpovhFcG4AdJFnt7MDY8riBgHtqxAZA",
+      "near": 2.2,
+      "at": "2026-11-14T16:18:15.911Z"
+    },
+    "create bengaluru-cafe.0xforge.near": {
+      "tx": "https://nearblocks.io/txns/7rPEXZBQKoy52kkzSat3yYALrd2LnZYV2qppAgQn7g6Q",
+      "near": 0.05,
+      "at": "2026-11-14T16:18:18.837Z"
+    },
+    "create swiftcash.0xforge.near": {
+      "tx": "https://nearblocks.io/txns/8neGCTtnvC6f1Co6z5F8vqmpS7QkPmqxTJKxoa7KLZsq",
+      "near": 0.02,
+      "at": "2026-11-14T16:18:21.652Z"
+    },
+    "deploy inpay": {
+      "tx": "https://nearblocks.io/txns/8nXWBkbPjyJpi5EvLm1ddPtkjTFKeCmjBWUSmww2kqtj",
+      "at": "2026-11-14T16:18:27.197Z"
+    },
+    "init inpay (allowlist: native USDC)": {
+      "tx": "https://nearblocks.io/txns/CwGUCajnh8xkRjoM22n3sNtAzHQpC1jjL4bw6rdkKrm8",
+      "at": "2026-11-14T16:18:29.436Z"
+    },
+    "register 0xforge.near on USDC": {
+      "tx": "https://nearblocks.io/txns/B1raCodJUmwkqVuSYvpL4kUwheRt7YxcTEbQwVcz5LvQ",
+      "at": "2026-11-14T16:18:32.433Z"
+    },
+    "register inpay.0xforge.near on USDC": {
+      "tx": "https://nearblocks.io/txns/Afh5TzZeRJghjaZE6mJ4RK9ujKo5z73Tzj9gLcgdRUFj",
+      "at": "2026-11-14T16:18:35.687Z"
+    },
+    "register swiftcash.0xforge.near on USDC": {
+      "tx": "https://nearblocks.io/txns/EG7Ug9w3sMi4ALFHJe3KpQKHDQ8U5wfNRSPpS7aXNAYG",
+      "at": "2026-11-14T16:18:38.922Z"
+    },
+    "bridge Solana USDC -> NEAR USDC (NEAR Intents 1Click)": {
+      "status": "SUCCESS",
+      "seconds": 103,
+      "sent_usdc": "2.500000",
+      "received_usdc": "2.499619",
+      "solana_tx": "https://solscan.io/tx/2QudPWdiEge6aSptnLtGsUynUF32jDDxuwM8ixFB5ZeQUm874cZuZ5CoFJ76efvJqSYQ5Wepb7PLSkToWPYaHJD3",
+      "deposit_address": "GKnWntyDkLqXnjpmgse6hBBbrUiKHn1Y1MPUyTf9AvaZ",
+      "intents_explorer": "https://explorer.near-intents.org/transactions/GKnWntyDkLqXnjpmgse6hBBbrUiKHn1Y1MPUyTf9AvaZ",
+      "near_txs": [
+        "https://nearblocks.io/txns/DUXZq7pNjxHjMrr6tnrmGijQEspsnsgqgLYV77WVD7jx",
+        "https://nearblocks.io/txns/Ca77AL8jKZUkhXTjc5QH47D8QNvoLr9wZcTmD1swgRqN",
+        "https://nearblocks.io/txns/HcKRdFE4LRJjTcqYmzj7uphd2s3WHg6oEBEz3VYvy8xs",
+        "https://nearblocks.io/txns/FSFpPtVeqenf7FUoyY2DPqxwiiaC9ifMbV98MkecbuLp"
+      ],
+      "destination_txs": [
+        ""
+      ],
+      "at": "2026-11-14T16:20:49.189Z"
+    },
+    "create_invoice (merchant)": {
+      "invoice_id": 0,
+      "amount_usdc": "2.000000",
+      "tx": "https://nearblocks.io/txns/275B7VxB2CVAXzxQ7Z3RwayuTCz4BLkMWXuSxCUN2Zjx",
+      "at": "2026-11-14T16:21:19.401Z"
+    },
+    "pay into escrow (customer, ft_transfer_call)": {
+      "tx": "https://nearblocks.io/txns/5k1s9m1Kti1mnVsYP6J5tKFk5waR3PMK9Jf5FX9QFGFU",
+      "status": "Paid",
+      "at": "2026-11-14T16:21:23.529Z"
+    },
+    "assign_provider (merchant)": {
+      "provider": "swiftcash.0xforge.near",
+      "fiat": "₹187.07",
+      "inr_per_usd": 94.289707,
+      "tx": "https://nearblocks.io/txns/5ZvDBh8jCV9ZcEYMPqCGJ884Ugxhc8h8by3oE96EVJZ1",
+      "at": "2026-11-14T16:21:26.251Z"
+    },
+    "top up merchant gas (0.1 NEAR)": {
+      "tx": "https://nearblocks.io/txns/CnxruCu6WVifFPTtcp3rnHwi9RrpdMKyobJSiWsqNb69",
+      "at": "2026-11-14T16:22:01.832Z"
+    },
+    "confirm_payout (merchant) -> USDC released to provider": {
+      "payout_ref": "simulated-bank-mwgm5ppn",
+      "tx": "https://nearblocks.io/txns/6eBDnH9PUTgKkUYXU8YUjKGKbe6ZJ4vDhZZNrm32PLjM",
+      "status": "Settled",
+      "provider_usdc": "2.000000",
+      "at": "2026-11-14T16:22:07.731Z"
+    }
+  }
+}

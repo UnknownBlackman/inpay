@@ -1,0 +1,11 @@
+{
+  "name": "inpay-mainnet-crosschain",
+  "private": true,
+  "type": "module",
+  "description": "One-off mainnet run: Solana USDC -> NEAR Intents (1Click) -> INPay escrow on NEAR mainnet. Not part of the app.",
+  "dependencies": {
+    "@solana/spl-token": "0.4.13",
+    "@solana/web3.js": "1.98.4",
+    "bs58": "6.0.0"
+  }
+}

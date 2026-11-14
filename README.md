@@ -186,6 +186,7 @@ We believe in complete transparency about what runs on live testnet contracts ve
 | **Offramp providers (`swiftcash`, `payrail`, `quickfx`)** | **Simulated** | Local HTTP services in this repo, but each operates with its own genuine NEAR testnet account that receives the released crypto. |
 | **Merchant banks** | **Simulated** | Lightweight JSON ledger service with credit notification webhooks. |
 | **Demo customer wallet** | **Demo convenience** | Server-held testnet keys behind the **Pay** button for quick browser testing. (Wallet selector is omitted for streamlined demoing). |
+| **Cross-chain payment (Solana USDC via NEAR Intents)** | **Real, on mainnet (one run)** | Not in the app. One mainnet payment went from Solana through NEAR Intents into the `inpay` escrow on NEAR mainnet; see [Mainnet run](#mainnet-run-usdc-on-solana--near-intents--inpay-escrow-on-near). |
 | **Merchant agent decisions** | **Real** | Deterministic TypeScript engine (`server/agent.ts`). An optional LLM (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`) is used only to reword event log explanations into conversational English; everything works completely without it. |
 
 ---
@@ -300,6 +301,36 @@ Transactions recorded from `npm run smoke` and live `npm run demo` runs:
 
 ---
 
+## Mainnet run: USDC on Solana → NEAR Intents → INPay escrow on NEAR
+
+The app runs on testnet. To prove the cross-chain path works for real, we ran one payment end to end on **mainnet**, with real USDC: a customer paid from Solana, [NEAR Intents](https://docs.near-intents.org/) (the 1Click API) delivered native USDC on NEAR, and the same `inpay` contract held it in escrow and released it to the provider. Script: [`scripts/mainnet/crosschain.ts`](scripts/mainnet/crosschain.ts). Full record: [`scripts/mainnet/mainnet-run.json`](scripts/mainnet/mainnet-run.json).
+
+| Step | What happened | Transaction |
+| :--- | :--- | :--- |
+| **Escrow deployed** | `inpay` contract at [`inpay.0xforge.near`](https://nearblocks.io/address/inpay.0xforge.near), allowlist = native USDC ([`17208628…`](https://nearblocks.io/address/17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1)) | [deploy](https://nearblocks.io/txns/8nXWBkbPjyJpi5EvLm1ddPtkjTFKeCmjBWUSmww2kqtj) · [init](https://nearblocks.io/txns/CwGUCajnh8xkRjoM22n3sNtAzHQpC1jjL4bw6rdkKrm8) |
+| **1. Customer pays on Solana** | 2.500000 USDC sent to a 1Click deposit address | [Solscan](https://solscan.io/tx/2QudPWdiEge6aSptnLtGsUynUF32jDDxuwM8ixFB5ZeQUm874cZuZ5CoFJ76efvJqSYQ5Wepb7PLSkToWPYaHJD3) |
+| **2. NEAR Intents settles** | 2.499619 USDC arrived on NEAR at `0xforge.near` (the customer) in 103 s. Total cost: 0.000381 USDC (0.015%) | [Intents explorer](https://explorer.near-intents.org/transactions/GKnWntyDkLqXnjpmgse6hBBbrUiKHn1Y1MPUyTf9AvaZ) · NEAR [1](https://nearblocks.io/txns/DUXZq7pNjxHjMrr6tnrmGijQEspsnsgqgLYV77WVD7jx) [2](https://nearblocks.io/txns/Ca77AL8jKZUkhXTjc5QH47D8QNvoLr9wZcTmD1swgRqN) [3](https://nearblocks.io/txns/HcKRdFE4LRJjTcqYmzj7uphd2s3WHg6oEBEz3VYvy8xs) [4](https://nearblocks.io/txns/FSFpPtVeqenf7FUoyY2DPqxwiiaC9ifMbV98MkecbuLp) |
+| **3. Merchant creates the invoice** | `bengaluru-cafe.0xforge.near` creates invoice #0 for 2.000000 USDC | [`create_invoice`](https://nearblocks.io/txns/275B7VxB2CVAXzxQ7Z3RwayuTCz4BLkMWXuSxCUN2Zjx) |
+| **4. Customer pays into escrow** | `ft_transfer_call` with `{"invoice_id": 0}` → status `Paid` | [`ft_transfer_call`](https://nearblocks.io/txns/5k1s9m1Kti1mnVsYP6J5tKFk5waR3PMK9Jf5FX9QFGFU) |
+| **5. Provider assigned** | `swiftcash.0xforge.near` for ₹187.07 (2 USDC at 94.29 INR/USD, less its 0.8% spread) → `Assigned` | [`assign_provider`](https://nearblocks.io/txns/5ZvDBh8jCV9ZcEYMPqCGJ884Ugxhc8h8by3oE96EVJZ1) |
+| **6. Escrow released** | Merchant confirms the payout → `Settled`; 2.000000 USDC sent to the provider | [`confirm_payout`](https://nearblocks.io/txns/6eBDnH9PUTgKkUYXU8YUjKGKbe6ZJ4vDhZZNrm32PLjM) |
+
+**What was real and what wasn't on this run:** the Solana payment, the NEAR Intents swap, the escrow contract and every state change in it are real mainnet transactions. The ₹ payout to the merchant's bank is still **simulated** (`payout_ref` is `simulated-bank-…`): there is no licensed offramp partner yet, so step 6 was confirmed by hand rather than by a bank webhook. All accounts belong to the team, so the funds stayed with us.
+
+**Cost:** about 2.3 NEAR, almost all of it storage locked by the contract code (refundable if the contract is removed); the payment itself cost under $0.01 in Solana and NEAR fees, plus the 0.015% swap cost above.
+
+To repeat it (needs a funded `.near` account and a Solana wallet with USDC and ~0.003 SOL in `.env`):
+
+```bash
+cd scripts/mainnet && npm install && cd ../..
+npx tsx scripts/mainnet/crosschain.ts plan            # read-only: balances + a dry quote
+npx tsx scripts/mainnet/crosschain.ts setup --yes     # sub-accounts, deploy + init inpay, USDC storage
+npx tsx scripts/mainnet/crosschain.ts bridge --yes    # Solana USDC -> NEAR USDC via 1Click
+npx tsx scripts/mainnet/crosschain.ts pay --yes       # invoice -> pay -> assign -> confirm_payout
+```
+
+---
+
 ## Why NEAR & The Mainnet Vision
 
 NEAR serves as the ideal universal clearinghouse for global merchant commerce:
@@ -323,6 +354,7 @@ inpay/
 │   └── chain/            # Chain drivers: near.ts (testnet via near-api-js) & memory.ts (offline)
 ├── web/                  # Vite + React frontend: merchant dashboard, checkout, mock bank views
 ├── scripts/              # Automated workflows: setup, smoke, sim, demo, scenarios, build-contract
+│   └── mainnet/          # One-off mainnet run: Solana USDC -> NEAR Intents -> inpay escrow (own deps)
 └── tests/                # Contract sandbox tests (near-workspaces) and unit tests
 ```
 
@@ -349,6 +381,7 @@ Everything in this repository was written during the hackathon window. Nothing c
 | [CoinGecko](https://www.coingecko.com/en/api) simple price API, [open.er-api.com](https://www.exchangerate-api.com/docs/free) | Live crypto prices and FX rates (with `rates.fallback.json` as a fallback) |
 | [Google Fonts](https://fonts.google.com/) | Encode Sans, Inter, Caveat, JetBrains Mono |
 | [Render](https://render.com/) | Hosting for the live demo |
+| [NEAR Intents 1Click API](https://docs.near-intents.org/), [@solana/web3.js](https://github.com/solana-labs/solana-web3.js), [@solana/spl-token](https://github.com/solana-program/token), [bs58](https://github.com/cryptocoinjs/bs58) | The one-off mainnet cross-chain run (`scripts/mainnet/`) |
 | [ElevenLabs](https://elevenlabs.io/) text-to-speech, [ffmpeg](https://ffmpeg.org/), headless Chrome | The demo video's voiceover and rendering (`docs/video/`) |
 | AI coding assistant (Claude Code) | Code and docs were written with AI assistance and reviewed by the team |
 
