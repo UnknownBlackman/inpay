@@ -333,6 +333,27 @@ inpay/
 
 ---
 
+## Libraries, templates and services used
+
+Everything in this repository was written during the hackathon window. Nothing comes from an earlier project of ours. Third-party code and services:
+
+| What | Used for |
+| --- | --- |
+| [near-sdk](https://crates.io/crates/near-sdk) 5 (Rust) | The `inpay` escrow contract |
+| [near-examples/FT](https://github.com/near-examples/FT) | The standard NEP-141 token contract, deployed unchanged as the `wETH` and `USDC` testnet stand-ins |
+| [near-api-js](https://github.com/near/near-api-js) 7 | Server-side signing, contract calls and views on testnet |
+| [near-workspaces](https://github.com/near/near-workspaces-js) 5 + nearcore sandbox 2.7.1 | Contract sandbox tests |
+| [Express](https://expressjs.com/) 5, [tsx](https://github.com/privatenumber/tsx), [dotenv](https://github.com/motdotla/dotenv) | Server, agent, mock providers and mock bank (Node + TypeScript) |
+| [React](https://react.dev/) 19, [React Router](https://reactrouter.com/) 7, [Vite](https://vite.dev/) 6 | Web app (landing page, checkout, dashboard, bank) |
+| [concurrently](https://github.com/open-cli-tools/concurrently), [TypeScript](https://www.typescriptlang.org/) | Dev tooling |
+| [CoinGecko](https://www.coingecko.com/en/api) simple price API, [open.er-api.com](https://www.exchangerate-api.com/docs/free) | Live crypto prices and FX rates (with `rates.fallback.json` as a fallback) |
+| [Google Fonts](https://fonts.google.com/) | Encode Sans, Inter, Caveat, JetBrains Mono |
+| [Render](https://render.com/) | Hosting for the live demo |
+| [ElevenLabs](https://elevenlabs.io/) text-to-speech, [ffmpeg](https://ffmpeg.org/), headless Chrome | The demo video's voiceover and rendering (`docs/video/`) |
+| AI coding assistant (Claude Code) | Code and docs were written with AI assistance and reviewed by the team |
+
+---
+
 ## License
 
 Released under the [MIT License](LICENSE). 
